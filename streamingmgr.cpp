@@ -93,55 +93,101 @@ class AS_ARGS_MAKECH : public AS_ARGS_BASE {
 private:
 	WAVEFORMATEX format;
 	int buffersamples;
-	std::function<void(void*, int)> makecallback;		// バッファへのポインタ, 要求するサンプル数
+	std::function<void(void*, int, void *)> makecallback;		// バッファへのポインタ, 要求するサンプル数
 
 public:
-	AS_ARGS_MAKECH(WAVEFORMATEX& _format, int _bufsamp, std::function<void(void*, int)>& _callback) : format(_format), buffersamples(_bufsamp), makecallback(_callback), AS_ARGS_BASE(SM_COMMAND::MAKE_CH) {}
+	AS_ARGS_MAKECH(WAVEFORMATEX& _format, int _bufsamp, std::function<void(void*, int, void *)>& _callback) : format(_format), buffersamples(_bufsamp), makecallback(_callback), AS_ARGS_BASE(SM_COMMAND::MAKE_CH) {}
 	WAVEFORMATEX GetFormat() { return this->format; }
 	int GetBufferSamples() { return this->buffersamples; }
-	std::function<void(void*, int)> GetCallback() { return this->makecallback; }
+	std::function<void(void*, int, void *)> GetCallback() { return this->makecallback; }
 	std::string ToString() { return std::format("MAKECH command"); };
 };
 
+// チャンネル再生コマンド
+class AS_ARGS_PLAYCH : public AS_ARGS_BASE {
+private:
+	int ch;
 
-class VoiceManager : public IXAudio2VoiceCallback
+public:
+	AS_ARGS_PLAYCH(int _ch) : ch(_ch), AS_ARGS_BASE(SM_COMMAND::PLAY_CH) {}
+	int GetChannel() { return this->ch; }
+	std::string ToString() { return std::format("PLAYCH({0:d}) command", this->ch); };
+};
+
+// チャンネル停止コマンド
+class AS_ARGS_STOPCH : public AS_ARGS_BASE {
+private:
+	int ch;
+
+public:
+	AS_ARGS_STOPCH(int _ch) : ch(_ch), AS_ARGS_BASE(SM_COMMAND::STOP_CH) {}
+	int GetChannel() { return this->ch; }
+	std::string ToString() { return std::format("STOPCH({0:d}) command", this->ch); };
+};
+
+
+class VoiceManager
 {
 public:
 	IXAudio2SourceVoice* sourceV;
 	std::function<void(std::string)> logfunc;		// ログ関数
+	std::function<void(void*, int, void *)> wavecallback;		// 波形要求コールバック関数
+	int callbacksamples;
+	int bufsize;
+	XAUDIO2_BUFFER xbuffer[2];
+	int next_buffer;
+	std::shared_ptr<BYTE> bufbody[2];
 
-	// VoiceCallback の実装
-	void OnStreamEnd()
-	{
-		//Called when the voice has just finished playing a contiguous audio stream.
+	XAUDIO2_BUFFER* NextBuffer() {
+		this->next_buffer = 1 - this->next_buffer;
+		return &this->xbuffer[1 - this->next_buffer];
 	}
 
-	//Unused methods are stubs
-	void OnVoiceProcessingPassEnd()
+	bool BufferCallback()
 	{
+		// バッファの監視
+		XAUDIO2_VOICE_STATE s;
+		this->sourceV->GetState(&s, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+		if (s.BuffersQueued < 2) {
+			// バッファが空いたので波形計算
+			for (int _c = 0; _c < (int)(2 - s.BuffersQueued); _c++)
+			{
+				// バッファが使い終わった時にコールバックされる
+				XAUDIO2_BUFFER* _b = this->NextBuffer();
+				// コールバック呼び出し
+				this->wavecallback((void*)_b->pAudioData, this->callbacksamples, nullptr);
+				// バッファをsubmitする
+				HRESULT hr = this->sourceV->SubmitSourceBuffer(_b, nullptr);
+				if (FAILED(hr)) {
+					this->logfunc(std::format("[ERROR] Failed submit buffer: hr={0:x}", hr));
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
-	void OnVoiceProcessingPassStart(UINT32 SamplesRequired)
+	VoiceManager(std::function<void(std::string)> _logfunc, std::function<void(void*, int, void *)> _callback, int _blksamples, int _size )
+		: sourceV(nullptr), logfunc(_logfunc), wavecallback(_callback), callbacksamples(_blksamples), bufsize(_size)
 	{
+		int bsize = this->callbacksamples * this->bufsize;
+		this->logfunc(std::format("Makebuffer {0:d}bytes.", bsize));
+		this->bufbody[0] = std::make_shared<BYTE>(bsize);
+		this->logfunc(std::format("Makebuffer {0:d}bytes.", bsize));
+		this->bufbody[1] = std::make_shared<BYTE>(bsize);
+		for (int _i = 0; _i < 2; _i++) {
+			xbuffer[_i].Flags = 0;
+			xbuffer[_i].AudioBytes = bsize;
+			xbuffer[_i].pAudioData = this->bufbody[_i].get();
+			xbuffer[_i].PlayBegin = 0;
+			xbuffer[_i].PlayLength = 0;
+			xbuffer[_i].LoopBegin = 0;
+			xbuffer[_i].LoopLength = 0;
+			xbuffer[_i].LoopCount = 0;
+			xbuffer[_i].pContext = NULL;
+		}
+		this->next_buffer = 0;
 	}
-
-	void OnBufferEnd(void* pBufferContext)
-	{
-	}
-
-	void OnBufferStart(void* pBufferContext)
-	{
-	}
-
-	void OnLoopEnd(void* pBufferContext)
-	{
-	}
-
-	void OnVoiceError(void* pBufferContext, HRESULT Error)
-	{
-	}
-
-	VoiceManager(std::function<void(std::string)> _func) : sourceV(nullptr), logfunc(_func) {}
 };
 
 
@@ -284,28 +330,15 @@ bool InitAudioStream()
 	return true;
 }
 
-// オーディオストリーム解放処理
-bool ReleaseAudioStream()
-{
-	// XAudio2を解放（すると関連してすべてのオブジェクトも解放される模様）
-	if (mgr_handle->xaudio != nullptr) {
-		mgr_handle->xaudio->Release();
-		mgr_handle->xaudio = nullptr;
-		mgr_handle->mvoice = nullptr;
-	}
-	// COMの解放
-	::CoUninitialize();
-	return true;
-}
-
 // チャンネル確保処理
-int MakeChannelAudioStream(const WAVEFORMATEX &format, int bufsamples, std::function<void(void*, int)> callback)
+int MakeChannelAudioStream(const WAVEFORMATEX &format, int bufsamples, std::function<void(void*, int, void *)> callback)
 {
 	HRESULT hr;
 	IXAudio2SourceVoice* sourceV;
-	VoiceManager vm(mgr_handle->logfunc);
+	mgr_handle->voices.push_back(VoiceManager(mgr_handle->logfunc, callback, bufsamples, format.nBlockAlign));
+	int idx = (int)(mgr_handle->voices.size() - 1);
 
-	hr = mgr_handle->xaudio->CreateSourceVoice(&sourceV, &format, 0, 2.0F, &vm, NULL, NULL);
+	hr = mgr_handle->xaudio->CreateSourceVoice(&sourceV, &format, 0, 2.0F, nullptr, NULL, NULL);
 	if (FAILED(hr)) {
 		// SourceVoice作成に失敗
 		mgr_handle->OutputLog(std::format("[ERROR] sourcevoice can't created : SourceVoice作成に失敗 hr={0:08X}", hr));
@@ -313,11 +346,84 @@ int MakeChannelAudioStream(const WAVEFORMATEX &format, int bufsamples, std::func
 	}
 
 	// 作成出来たSourceVoiceを登録してindexを返す
-	vm.sourceV = sourceV;
-	mgr_handle->voices.push_back(std::move(vm));
-	int idx = (int)(mgr_handle->voices.size() - 1);
+	mgr_handle->voices[idx].sourceV = sourceV;
 
 	return idx;
+}
+
+// チャンネル再生処理
+bool PlayChannelAudioStream(int ch)
+{
+	HRESULT hr;
+
+	// 再生の前に２回コールバックを呼び出す
+	XAUDIO2_BUFFER* _b;
+	_b = mgr_handle->voices[ch].NextBuffer();
+	mgr_handle->logfunc(std::format("callbacked 1st. buf={0:p},{1:p},{2:p}", (void *)_b, (void *)_b->pAudioData, (void *)_b->pContext));
+	mgr_handle->voices[ch].wavecallback((void*)_b->pAudioData, mgr_handle->voices[ch].callbacksamples, nullptr);
+	hr = mgr_handle->voices[ch].sourceV->SubmitSourceBuffer(_b);
+	if (FAILED(hr)) {
+		// バッファー送りに失敗
+		mgr_handle->OutputLog(std::format("[ERROR] voice{0}-{1} can't submit buffer : hr={2:08X}", ch, 0, hr));
+		return false;
+	}
+	_b = mgr_handle->voices[ch].NextBuffer();
+	mgr_handle->logfunc(std::format("callbacked 2nd. buf={0:p},{1:p},{2:p}", (void *)_b, (void *)_b->pAudioData, (void*)_b->pContext));
+	mgr_handle->voices[ch].wavecallback((void*)_b->pAudioData, mgr_handle->voices[ch].callbacksamples, nullptr);
+	hr = mgr_handle->voices[ch].sourceV->SubmitSourceBuffer(_b);
+	if (FAILED(hr)) {
+		// バッファー送りに失敗
+		mgr_handle->OutputLog(std::format("[ERROR] voice{0}-{1} can't submit buffer : hr={2:08X}", ch, 1, hr));
+		return false;
+	}
+
+	// 再生開始
+	mgr_handle->logfunc(std::format("play start."));
+	hr = mgr_handle->voices[ch].sourceV->Start(0, 0);
+
+	if (FAILED(hr)) {
+		// 再生開始に失敗
+		mgr_handle->OutputLog(std::format("[ERROR] voice{0} can't play : hr={1:08X}", ch, hr));
+		return false;
+	}
+
+	// 試しに状態を取って見る
+	::Sleep(0);
+	XAUDIO2_VOICE_STATE state;
+	mgr_handle->voices[ch].sourceV->GetState(&state, 0);
+	mgr_handle->OutputLog(std::format("[INFO] state pContext={0:p}, Queued={1:d}, playedsample={2:d}", state.pCurrentBufferContext, state.BuffersQueued, state.SamplesPlayed));
+
+	return true;
+}
+
+// チャンネル停止処理
+bool StopChannelAudioStream(int ch)
+{
+	HRESULT hr;
+
+	hr = mgr_handle->voices[ch].sourceV->Stop(0, 0);
+	if (FAILED(hr)) {
+		// 停止に失敗
+		mgr_handle->OutputLog(std::format("[ERROR] sourcevoice{0:d} can't stopped : Stop()に失敗 hr={1:08X}", ch, hr));
+		return false;
+	}
+
+	return true;
+}
+
+// オーディオストリーム解放処理
+bool ReleaseAudioStream()
+{
+	// XAudio2を解放（すると関連してすべてのオブジェクトも解放される模様）
+	if (mgr_handle->xaudio != nullptr) {
+		StopChannelAudioStream(0);
+		mgr_handle->xaudio->Release();
+		mgr_handle->xaudio = nullptr;
+		mgr_handle->mvoice = nullptr;
+	}
+	// COMの解放
+	::CoUninitialize();
+	return true;
 }
 
 
@@ -330,14 +436,25 @@ DWORD WINAPI AudioStreamProcThread(void* _)
 	AS_ARGS_INIT* c_init;
 	AS_ARGS_QUIT* c_quit;
 	AS_ARGS_MAKECH* c_makech;
+	AS_ARGS_PLAYCH* c_playch;
+	AS_ARGS_STOPCH* c_stopch;
+	std::vector<int> playingch;
+	bool _r;
+	int ch;
 	do {
 		// コマンド取得
 		AS_ARGS_BASE *args;
-		bool _r = mgr_handle->GetCommand(&args);
+		_r = mgr_handle->GetCommand(&args);
 
 		if ( _r == false) {
 			// 取得出来なかった
-			::Sleep(0);
+			// バッファ供給イベント監視処理を入れて必要に応じてコールバックを呼び出す
+			if (playingch.empty() == false) {
+				_r = mgr_handle->voices[0].BufferCallback();
+			}
+			if (_r == false) {
+				::Sleep(0);
+			}
 			continue;
 		}
 
@@ -373,8 +490,26 @@ DWORD WINAPI AudioStreamProcThread(void* _)
 		case SM_COMMAND::MAKE_CH:
 			// チャンネル作成
 			c_makech = static_cast<AS_ARGS_MAKECH*>(args);
-			int ch = MakeChannelAudioStream(c_makech->GetFormat(), c_makech->GetBufferSamples(), c_makech->GetCallback());
+			ch = MakeChannelAudioStream(c_makech->GetFormat(), c_makech->GetBufferSamples(), c_makech->GetCallback());
 			mgr_handle->SetRetval((ch >= 0 ) ? SM_RECEIVE::OK : SM_RECEIVE::ERR, ch, nullptr, nullptr);
+			if (ch >= 0) {
+				// 演奏チャンネルを登録
+				playingch.push_back(ch);
+			}
+			break;
+
+		case SM_COMMAND::PLAY_CH:
+			// チャンネル再生
+			c_playch = static_cast<AS_ARGS_PLAYCH*>(args);
+			_r = PlayChannelAudioStream(c_playch->GetChannel());
+			mgr_handle->SetRetval((_r) ? SM_RECEIVE::OK : SM_RECEIVE::ERR, c_playch->GetChannel(), nullptr, nullptr);
+			break;
+
+		case SM_COMMAND::STOP_CH:
+			// チャンネル停止
+			c_stopch = static_cast<AS_ARGS_STOPCH*>(args);
+			_r = StopChannelAudioStream(c_stopch->GetChannel());
+			mgr_handle->SetRetval((_r) ? SM_RECEIVE::OK : SM_RECEIVE::ERR, c_stopch->GetChannel(), nullptr, nullptr);
 			break;
 
 		}
@@ -480,7 +615,7 @@ void Release_STMGR()
 // 引数：format : 出力したい波形情報
 //       buffersamples : １回のリクエストに必要なバッファサイズ（サンプル数）
 // 戻値 : int <0 でエラー、>=0で作成されたチャンネルのindex
-int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void(void*, int)> callbackf)
+int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void(void*, int, void *)> callbackf)
 {
 	// 初期化していないなのでnullを返す
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr )
@@ -510,8 +645,55 @@ int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void
 // チャンネル破棄
 
 // 再生開始
+// 引数： ch : チャンネルのindex
+// 戻値： true で再生処理OK
+// 備考：再生を始める前に、渡されたコールバック関数が２回呼び出されて、バッファ２つ分の波形データの作成が必要となります。
+bool PlayChannel_STMGR(int ch)
+{
+	// 初期化していないなのでnullを返す
+	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr)
+	{
+		mgr_handle->OutputLog(std::format("[ERROR] not initialized AudioStream."));
+		return false;
+	}
 
+	// チャンネル作成コマンド発行
+	std::shared_ptr<AS_ARGS_PLAYCH> m = std::make_shared<AS_ARGS_PLAYCH>(ch);
+	auto _r = mgr_handle->SetCommandSync(m.get());
+
+	// 初期化に失敗したら終了処理を呼んで nullptr を返す
+	_r.wait();
+	auto rr = _r.get();
+	if (rr.ret != SM_RECEIVE::OK) {
+		// エラー発生
+		mgr_handle->OutputLog(std::format("[ERROR] failed make channel."));
+		return false;
+	}
+
+	return true;
+}
 
 
 // 停止
+void StopChannel_STMGR(int ch)
+{
+	// 初期化していないなのでnullを返す
+	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr)
+	{
+		mgr_handle->OutputLog(std::format("[ERROR] not initialized AudioStream."));
+		return;
+	}
 
+	// チャンネル作成コマンド発行
+	std::shared_ptr<AS_ARGS_STOPCH> m = std::make_shared<AS_ARGS_STOPCH>(ch);
+	auto _r = mgr_handle->SetCommandSync(m.get());
+
+	// 初期化に失敗したら終了処理を呼んで nullptr を返す
+	_r.wait();
+	auto rr = _r.get();
+	if (rr.ret != SM_RECEIVE::OK) {
+		// エラー発生
+		mgr_handle->OutputLog(std::format("[ERROR] failed make channel."));
+		return;
+	}
+}
