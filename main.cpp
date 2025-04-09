@@ -14,13 +14,13 @@ void consolelog(std::string mes)
 
 
 
-// 16bit®”‚ÌPSG
+// 16bitæ•´æ•°ã®PSG
 class PSG16 {
 private:
-	// ”gŒ`‚Ì¸“x‚ğã‚°‚éˆ×‚Ì“‚Ü‚µ•ª
+	// æ³¢å½¢ã®ç²¾åº¦ã‚’ä¸Šã’ã‚‹ç‚ºã®åµ©ã¾ã—åˆ†
 	static const int freq_multiple = 128;
 
-	// ‰¹—Ê Å‘å‚ª 1.0f
+	// éŸ³é‡ æœ€å¤§ãŒ 1.0f
 	float left_volume;
 	float right_volume;
 	int16_t cur_lvol;
@@ -28,19 +28,19 @@ private:
 
 	int base_hz;
 	int base_hz_mult;
-	int wavetype;		// ”gŒ`ƒ^ƒCƒviOn/Off”äj@1-15
+	int wavetype;		// æ³¢å½¢ã‚¿ã‚¤ãƒ—ï¼ˆOn/Offæ¯”ï¼‰ã€€1-15
 
 	float freq;
 	int cur_freq;
 
 	int wave_cnt;
-	int wave_cnt_h;		// h‹æŠÔ‚ÌƒJƒEƒ“ƒ^(ƒRƒŒ‚ğ’´‚¦‚é‚Æl‚É‚È‚é)
-	int waveindex;		// ”gŒ`index 1-16
+	int wave_cnt_h;		// håŒºé–“ã®ã‚«ã‚¦ãƒ³ã‚¿(ã‚³ãƒ¬ã‚’è¶…ãˆã‚‹ã¨lã«ãªã‚‹)
+	int waveindex;		// æ³¢å½¢index 1-16
 
 	bool isKeyOn;
 
 public:
-	// ˆø”Foutputhz = o—Íü”g”
+	// å¼•æ•°ï¼šoutputhz = å‡ºåŠ›å‘¨æ³¢æ•°
 	PSG16(int outputhz) : base_hz(outputhz), left_volume(0.0f), right_volume(0.0f), wavetype(8), freq(440.0f), wave_cnt(0), waveindex(1), isKeyOn(false)
 	{
 		this->base_hz_mult = base_hz * PSG16::freq_multiple;
@@ -49,18 +49,18 @@ public:
 		this->cur_freq = this->freq * PSG16::freq_multiple;
 	}
 	
-	// ü”g”İ’è
+	// å‘¨æ³¢æ•°è¨­å®š
 	void SetFreq(float hz)
 	{
 		if (hz * 2 >= base_hz) {
-			// ’lˆæƒI[ƒo[‚È‚Ì‚Å‰½‚à‚µ‚È‚¢
+			// å€¤åŸŸã‚ªãƒ¼ãƒãƒ¼ãªã®ã§ä½•ã‚‚ã—ãªã„
 			return;
 		}
 		this->freq = hz;
 		this->cur_freq = this->freq;
 	}
 
-	// ‰¹—Êİ’è
+	// éŸ³é‡è¨­å®š
 	void SetVolume(float leftv, float rightv)
 	{
 		this->left_volume = leftv;
@@ -72,7 +72,7 @@ public:
 	// KeyOn
 	void SetKeyOn()
 	{
-		this->waveindex = 1;		// ”gŒ`ˆÊ’u‚ğæ“ª‚ÉƒŠƒZƒbƒg
+		this->waveindex = 1;		// æ³¢å½¢ä½ç½®ã‚’å…ˆé ­ã«ãƒªã‚»ãƒƒãƒˆ
 		this->wave_cnt = 0;
 		this->isKeyOn = true;
 	}
@@ -83,8 +83,8 @@ public:
 		this->isKeyOn = false;
 	}
 
-	// ”gŒ`w’è
-	// ˆø”@: wtype 1-15 
+	// æ³¢å½¢æŒ‡å®š
+	// å¼•æ•°ã€€: wtype 1-15 
 	void SetWaveType(int wtype)
 	{
 		if (wtype < 1 || wtype > 15) return;
@@ -92,11 +92,11 @@ public:
 		this->wave_cnt_h = this->base_hz * this->wavetype / 16;
 	}
 
-	// ”gŒ`¶¬
+	// æ³¢å½¢ç”Ÿæˆ
 	void MakeWave(int16_t* buffer, int samples)
 	{
 		if (isKeyOn == false) {
-			// ƒL[ƒIƒ“‚µ‚Ä‚È‚¢‚Ì‚Å–³‰¹
+			// ã‚­ãƒ¼ã‚ªãƒ³ã—ã¦ãªã„ã®ã§ç„¡éŸ³
 			for (int _i = 0; _i < samples; _i++) {
 				buffer[_i * 2 + 0] = 0x0000;
 				buffer[_i * 2 + 1] = 0x0000;
@@ -106,7 +106,7 @@ public:
 			for (int _i = 0; _i < samples; _i++) {
 				this->wave_cnt += this->cur_freq;
 				if (this->wave_cnt >= this->base_hz) this->wave_cnt -= this->base_hz;
-				// o—Í
+				// å‡ºåŠ›
 				if (this->wave_cnt < this->wave_cnt_h)
 				{
 					buffer[_i * 2 + 0] = this->cur_lvol;
@@ -128,10 +128,10 @@ void wavecallbackfunc(void* buf, int samples, void *ptr)
 {
 	if (ptr != nullptr) {
 		XAUDIO2_BUFFER* p = (XAUDIO2_BUFFER*)ptr;
-		consolelog(std::format("wavecallback {0:d}samples. ptr={1:p},{2:p} audiobytes={3:d} buffer={4:p} {5:d}", samples, buf, ptr, p->AudioBytes, (void *)p->pAudioData, p->PlayBegin));
+		consolelog(fmt::format("wavecallback {0:d}samples. ptr={1:p},{2:p} audiobytes={3:d} buffer={4:p} {5:d}", samples, buf, ptr, p->AudioBytes, (void *)p->pAudioData, p->PlayBegin));
 	}
 	else {
-		consolelog(std::format("wavecallback {0:d}samples. ptr={1:p},{2:p}", samples, buf, ptr));
+		// consolelog(std::format("wavecallback {0:d}samples. ptr={1:p},{2:p}", samples, buf, ptr));
 	}
 	int16_t* pbuf = (int16_t*)buf;
 	psg->MakeWave(pbuf,samples);
@@ -140,7 +140,7 @@ void wavecallbackfunc(void* buf, int samples, void *ptr)
 
 int main(int argc, char* argv[])
 {
-	// ƒeƒXƒg
+	// ãƒ†ã‚¹ãƒˆ
 
 	std::function<void(std::string)> logf = consolelog;
 	bool r = Initialize_STMGR(logf);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 	w.nBlockAlign = w.wBitsPerSample * w.nChannels / 8;
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
 	std::function<void(void*, int, void *)> cbf = wavecallbackfunc;
-	int ch = MakeChannel_STMGR(w, w.nSamplesPerSec / 50, cbf);
+	int ch = MakeChannel_STMGR(w, w.nSamplesPerSec / 100, cbf);
 	printf("ch %d\n", ch);
 	psg->SetFreq(440.0);
 	psg->SetVolume(0.7f, 0.3f);
@@ -167,22 +167,31 @@ int main(int argc, char* argv[])
 	printf("play = %d\n", r);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 20.0);
+	psg->SetVolume(0.3f, 0.7f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 40.0);
+	psg->SetVolume(0.7f, 0.3f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 60.0);
+	psg->SetVolume(0.3f, 0.7f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 80.0);
+	psg->SetVolume(0.7f, 0.3f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 100.0);
+	psg->SetVolume(0.3f, 0.7f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 120.0);
+	psg->SetVolume(0.7f, 0.3f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 140.0);
+	psg->SetVolume(0.3f, 0.7f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 160.0);
+	psg->SetVolume(0.7f, 0.3f);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 180.0);
+	psg->SetVolume(0.3f, 0.7f);
 	Sleep(1000);
 	StopChannel_STMGR(ch);
 

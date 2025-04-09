@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ヘッダー ファイル\fmt">
+      <UniqueIdentifier>{7c9a77f0-ee6e-4d2d-b837-45b130201d19}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="streamingmgr.cpp">
@@ -25,6 +28,48 @@
   <ItemGroup>
     <ClInclude Include="streamingmgr.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\args.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\base.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\chrono.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\color.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\compile.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\core.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\format.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\format-inl.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\os.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\ostream.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\printf.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\ranges.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\std.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fmt\xchar.h">
+      <Filter>ヘッダー ファイル\fmt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

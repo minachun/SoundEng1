@@ -1,9 +1,9 @@
 #include "streamingmgr.h"
 
 /*
- * XAudio2‚ğg‚Á‚½ƒI[ƒfƒBƒIƒXƒgƒŠ[ƒ~ƒ“ƒOƒ}ƒl[ƒWƒƒ[
+ * XAudio2ã‚’ä½¿ã£ãŸã‚ªãƒ¼ãƒ‡ã‚£ã‚ªã‚¹ãƒˆãƒªãƒ¼ãƒŸãƒ³ã‚°ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼
  * 
- * “à•”‚ÅƒXƒŒƒbƒh‚ğˆê‚Â—§‚¿ã‚°‚Ü‚·A‚»‚Ì‚½‚ßA‰Šú‰»‚ÆI—¹ˆ—‚Í‘Î‚ÅŒÄ‚Ño‚µ‚Ä‚­‚¾‚³‚¢B
+ * å†…éƒ¨ã§ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’ä¸€ã¤ç«‹ã¡ä¸Šã’ã¾ã™ã€ãã®ãŸã‚ã€åˆæœŸåŒ–ã¨çµ‚äº†å‡¦ç†ã¯å¯¾ã§å‘¼ã³å‡ºã—ã¦ãã ã•ã„ã€‚
  */
 
 
@@ -12,14 +12,14 @@ enum class SM_RECEIVE : int {
 	ERR,
 };
 
-// ƒRƒ}ƒ“ƒh–ß‚è’l\‘¢‘Ì
+// ã‚³ãƒãƒ³ãƒ‰æˆ»ã‚Šå€¤æ§‹é€ ä½“
 struct AS_RETVAL {
 	SM_RECEIVE ret;
 	int arg0;
 	void* arg1;
 	void* arg2;
 
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	AS_RETVAL() : ret(SM_RECEIVE::OK), arg0(0), arg1(nullptr), arg2(nullptr) {}
 	AS_RETVAL(SM_RECEIVE _r, int a0, void* a1, void* a2) : ret(_r), arg0(a0), arg1(a1), arg2(a2) {}
 };
@@ -27,16 +27,16 @@ struct AS_RETVAL {
 
 enum class SM_COMMAND : int {
 	NONE,
-	INIT,			// ‰Šú‰»
-	MAKE_CH,		// ƒ`ƒƒƒ“ƒlƒ‹ì¬
-	RELEASE_CH,		// ƒ`ƒƒƒ“ƒlƒ‹”jŠü
-	PLAY_CH,		// ƒ`ƒƒƒ“ƒlƒ‹Ä¶
-	STOP_CH,		// ƒ`ƒƒƒ“ƒlƒ‹’â~
-	REBOOT,			// ‰ğ•ú‚µ‚ÄÄ“x‰Šú‰»
-	QUIT,			// ‰ğ•ú arg0‚ğ1‚É‚·‚é‚ÆƒXƒŒƒbƒh‚Ü‚ÅI—¹‚·‚é
+	INIT,			// åˆæœŸåŒ–
+	MAKE_CH,		// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆ
+	RELEASE_CH,		// ãƒãƒ£ãƒ³ãƒãƒ«ç ´æ£„
+	PLAY_CH,		// ãƒãƒ£ãƒ³ãƒãƒ«å†ç”Ÿ
+	STOP_CH,		// ãƒãƒ£ãƒ³ãƒãƒ«åœæ­¢
+	REBOOT,			// è§£æ”¾ã—ã¦å†åº¦åˆæœŸåŒ–
+	QUIT,			// è§£æ”¾ arg0ã‚’1ã«ã™ã‚‹ã¨ã‚¹ãƒ¬ãƒƒãƒ‰ã¾ã§çµ‚äº†ã™ã‚‹
 };
 
-// ƒRƒ}ƒ“ƒhó‚¯“n‚µ\‘¢‘Ì
+// ã‚³ãƒãƒ³ãƒ‰å—ã‘æ¸¡ã—æ§‹é€ ä½“
 struct AS_ARGS {
 	SM_COMMAND command;
 	int arg0;
@@ -56,7 +56,7 @@ struct AS_ARGS {
 	}
 };
 
-// ó‚¯“n‚µƒRƒ}ƒ“ƒhƒRƒ“ƒeƒi[ƒNƒ‰ƒX‚ÌI/F
+// å—ã‘æ¸¡ã—ã‚³ãƒãƒ³ãƒ‰ã‚³ãƒ³ãƒ†ãƒŠãƒ¼ã‚¯ãƒ©ã‚¹ã®I/F
 class AS_ARGS_BASE {
 protected:
 	SM_COMMAND command;
@@ -67,17 +67,17 @@ public:
 	virtual std::string ToString() = 0;
 };
 
-// ‰Šú‰»ƒRƒ}ƒ“ƒh
+// åˆæœŸåŒ–ã‚³ãƒãƒ³ãƒ‰
 class AS_ARGS_INIT : public AS_ARGS_BASE {
 private:
-	// “Á‚É•K—v‚Èˆø”‚È‚µ
+	// ç‰¹ã«å¿…è¦ãªå¼•æ•°ãªã—
 
 public:
 	AS_ARGS_INIT() : AS_ARGS_BASE(SM_COMMAND::INIT) {}
-	std::string ToString() { return std::format("INIT command"); };
+	std::string ToString() override { return "INIT command"; };
 };
 
-// ‰ğ•úƒRƒ}ƒ“ƒh
+// è§£æ”¾ã‚³ãƒãƒ³ãƒ‰
 class AS_ARGS_QUIT : public AS_ARGS_BASE {
 private:
 	bool isTerminated;
@@ -85,25 +85,25 @@ private:
 public:
 	AS_ARGS_QUIT(bool _r) : isTerminated(_r), AS_ARGS_BASE(SM_COMMAND::QUIT) {}
 	bool IsTerminated() { return this->isTerminated; }
-	std::string ToString() { return std::format("QUIT command"); };
+	std::string ToString() override { return "QUIT command"; };
 };
 
-// ƒ`ƒƒƒ“ƒlƒ‹ì¬ƒRƒ}ƒ“ƒh
+// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆã‚³ãƒãƒ³ãƒ‰
 class AS_ARGS_MAKECH : public AS_ARGS_BASE {
 private:
 	WAVEFORMATEX format;
 	int buffersamples;
-	std::function<void(void*, int, void *)> makecallback;		// ƒoƒbƒtƒ@‚Ö‚Ìƒ|ƒCƒ“ƒ^, —v‹‚·‚éƒTƒ“ƒvƒ‹”
+	std::function<void(void*, int, void *)> makecallback;		// ãƒãƒƒãƒ•ã‚¡ã¸ã®ãƒã‚¤ãƒ³ã‚¿, è¦æ±‚ã™ã‚‹ã‚µãƒ³ãƒ—ãƒ«æ•°
 
 public:
 	AS_ARGS_MAKECH(WAVEFORMATEX& _format, int _bufsamp, std::function<void(void*, int, void *)>& _callback) : format(_format), buffersamples(_bufsamp), makecallback(_callback), AS_ARGS_BASE(SM_COMMAND::MAKE_CH) {}
 	WAVEFORMATEX GetFormat() { return this->format; }
 	int GetBufferSamples() { return this->buffersamples; }
 	std::function<void(void*, int, void *)> GetCallback() { return this->makecallback; }
-	std::string ToString() { return std::format("MAKECH command"); };
+	std::string ToString() override { return "MAKECH command"; };
 };
 
-// ƒ`ƒƒƒ“ƒlƒ‹Ä¶ƒRƒ}ƒ“ƒh
+// ãƒãƒ£ãƒ³ãƒãƒ«å†ç”Ÿã‚³ãƒãƒ³ãƒ‰
 class AS_ARGS_PLAYCH : public AS_ARGS_BASE {
 private:
 	int ch;
@@ -111,10 +111,10 @@ private:
 public:
 	AS_ARGS_PLAYCH(int _ch) : ch(_ch), AS_ARGS_BASE(SM_COMMAND::PLAY_CH) {}
 	int GetChannel() { return this->ch; }
-	std::string ToString() { return std::format("PLAYCH({0:d}) command", this->ch); };
+	std::string ToString() override { return fmt::format("PLAYCH({0:d}) command", this->ch); };
 };
 
-// ƒ`ƒƒƒ“ƒlƒ‹’â~ƒRƒ}ƒ“ƒh
+// ãƒãƒ£ãƒ³ãƒãƒ«åœæ­¢ã‚³ãƒãƒ³ãƒ‰
 class AS_ARGS_STOPCH : public AS_ARGS_BASE {
 private:
 	int ch;
@@ -122,58 +122,97 @@ private:
 public:
 	AS_ARGS_STOPCH(int _ch) : ch(_ch), AS_ARGS_BASE(SM_COMMAND::STOP_CH) {}
 	int GetChannel() { return this->ch; }
-	std::string ToString() { return std::format("STOPCH({0:d}) command", this->ch); };
+	std::string ToString() override { return fmt::format("STOPCH({0:d}) command", this->ch); };
 };
 
 
-class VoiceManager
+class VoiceManager : public IXAudio2VoiceCallback
 {
 public:
 	IXAudio2SourceVoice* sourceV;
-	std::function<void(std::string)> logfunc;		// ƒƒOŠÖ”
-	std::function<void(void*, int, void *)> wavecallback;		// ”gŒ`—v‹ƒR[ƒ‹ƒoƒbƒNŠÖ”
+	std::function<void(std::string)> logfunc;		// ãƒ­ã‚°é–¢æ•°
+	std::function<void(void*, int, void *)> wavecallback;		// æ³¢å½¢è¦æ±‚ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°
 	int callbacksamples;
 	int bufsize;
 	XAUDIO2_BUFFER xbuffer[2];
 	int next_buffer;
 	std::shared_ptr<BYTE> bufbody[2];
+	int prepare_index;
+	int submit_index;
+	HANDLE notifyPrepared;
 
 	XAUDIO2_BUFFER* NextBuffer() {
 		this->next_buffer = 1 - this->next_buffer;
 		return &this->xbuffer[1 - this->next_buffer];
 	}
 
-	bool BufferCallback()
+	void STDMETHODCALLTYPE OnBufferEnd(void* pBufferContext) override
 	{
-		// ƒoƒbƒtƒ@‚ÌŠÄ‹
-		XAUDIO2_VOICE_STATE s;
-		this->sourceV->GetState(&s, XAUDIO2_VOICE_NOSAMPLESPLAYED);
-		if (s.BuffersQueued < 2) {
-			// ƒoƒbƒtƒ@‚ª‹ó‚¢‚½‚Ì‚Å”gŒ`ŒvZ
-			for (int _c = 0; _c < (int)(2 - s.BuffersQueued); _c++)
-			{
-				// ƒoƒbƒtƒ@‚ªg‚¢I‚í‚Á‚½‚ÉƒR[ƒ‹ƒoƒbƒN‚³‚ê‚é
-				XAUDIO2_BUFFER* _b = this->NextBuffer();
-				// ƒR[ƒ‹ƒoƒbƒNŒÄ‚Ño‚µ
-				this->wavecallback((void*)_b->pAudioData, this->callbacksamples, nullptr);
-				// ƒoƒbƒtƒ@‚ğsubmit‚·‚é
-				HRESULT hr = this->sourceV->SubmitSourceBuffer(_b, nullptr);
-				if (FAILED(hr)) {
-					this->logfunc(std::format("[ERROR] Failed submit buffer: hr={0:x}", hr));
-				}
-			}
-			return true;
+
+	}
+	void STDMETHODCALLTYPE OnBufferStart(void* pBufferContext) override
+	{
+		// æº–å‚™æ¸ˆã¿ã‚’ç™»éŒ²
+		this->SubmitBuffer();
+
+		// æ¬¡ã®ãƒãƒƒãƒ•ã‚¡ã®æº–å‚™ã‚’é€šçŸ¥ã™ã‚‹
+		//this->logfunc("SetEvent");
+		//::SetEvent(this->notifyPrepared);
+		this->PrepareBuffer();
+	}
+	void STDMETHODCALLTYPE OnLoopEnd(void* pBufferContext) override
+	{
+
+	}
+
+	void STDMETHODCALLTYPE OnStreamEnd() override
+	{
+	}
+
+	void STDMETHODCALLTYPE OnVoiceError(void* pBufferContext, HRESULT Error) override
+	{
+	}
+
+	void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override
+	{
+	}
+
+	void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32 BytesRequired) override
+	{
+		if (BytesRequired > 0)
+		{
+			this->logfunc(fmt::format("OnVoiceProcessingPassStart {0:d}", BytesRequired));
 		}
-		return false;
+	}
+
+	void PrepareBuffer()
+	{
+		this->logfunc(fmt::format("PrepareBuffer {0:d}", this->prepare_index));
+		XAUDIO2_BUFFER* _b = &this->xbuffer[this->prepare_index];
+		// ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯å‘¼ã³å‡ºã—
+		this->wavecallback((void*)_b->pAudioData, this->callbacksamples, nullptr);
+		this->prepare_index = 1 - this->prepare_index;
+	}
+
+	void SubmitBuffer()
+	{
+		this->logfunc(fmt::format("SubmitBuffer {0:d}", this->submit_index));
+		XAUDIO2_BUFFER* _b = &this->xbuffer[this->submit_index];
+		// ãƒãƒƒãƒ•ã‚¡ã‚’submitã™ã‚‹
+		HRESULT hr = this->sourceV->SubmitSourceBuffer(_b, nullptr);
+		if (FAILED(hr)) {
+			this->logfunc(fmt::format("[ERROR] Failed submit buffer: hr={0:x}", hr));
+		}
+		this->submit_index = 1 - this->submit_index;
 	}
 
 	VoiceManager(std::function<void(std::string)> _logfunc, std::function<void(void*, int, void *)> _callback, int _blksamples, int _size )
 		: sourceV(nullptr), logfunc(_logfunc), wavecallback(_callback), callbacksamples(_blksamples), bufsize(_size)
 	{
 		int bsize = this->callbacksamples * this->bufsize;
-		this->logfunc(std::format("Makebuffer {0:d}bytes.", bsize));
+		this->logfunc(fmt::format("Makebuffer {0:d}bytes.", bsize));
 		this->bufbody[0] = std::make_shared<BYTE>(bsize);
-		this->logfunc(std::format("Makebuffer {0:d}bytes.", bsize));
+		this->logfunc(fmt::format("Makebuffer {0:d}bytes.", bsize));
 		this->bufbody[1] = std::make_shared<BYTE>(bsize);
 		for (int _i = 0; _i < 2; _i++) {
 			xbuffer[_i].Flags = 0;
@@ -184,37 +223,45 @@ public:
 			xbuffer[_i].LoopBegin = 0;
 			xbuffer[_i].LoopLength = 0;
 			xbuffer[_i].LoopCount = 0;
-			xbuffer[_i].pContext = NULL;
+			xbuffer[_i].pContext = (void *)_i;
 		}
 		this->next_buffer = 0;
+		this->prepare_index = 0;
+		this->submit_index = 0;
+		this->notifyPrepared = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+	}
+
+	~VoiceManager()
+	{
+		::CloseHandle(this->notifyPrepared);
 	}
 };
 
 
-// “à•”‚Åg—p‚·‚éŠÇ——pƒnƒ“ƒhƒ‹
+// å†…éƒ¨ã§ä½¿ç”¨ã™ã‚‹ç®¡ç†ç”¨ãƒãƒ³ãƒ‰ãƒ«
 class StreamManager : public IXAudio2EngineCallback {
 public:
-	HANDLE h_thread;					// ƒXƒŒƒbƒhƒnƒ“ƒhƒ‹
+	HANDLE h_thread;					// ã‚¹ãƒ¬ãƒƒãƒ‰ãƒãƒ³ãƒ‰ãƒ«
 	std::mutex commt;
-	std::queue<AS_ARGS_BASE *> comqueue;		// ƒRƒ}ƒ“ƒhƒLƒ…[
-	std::queue<std::promise<AS_RETVAL>> retqueue;		// ‰“šƒLƒ…[
-	std::function<void(std::string)> logfunc;		// ƒƒOŠÖ”
+	std::queue<AS_ARGS_BASE *> comqueue;		// ã‚³ãƒãƒ³ãƒ‰ã‚­ãƒ¥ãƒ¼
+	std::queue<std::promise<AS_RETVAL>> retqueue;		// å¿œç­”ã‚­ãƒ¥ãƒ¼
+	std::function<void(std::string)> logfunc;		// ãƒ­ã‚°é–¢æ•°
 	void* log_instance;
-	// XAudio2‚ÌI/F
+	// XAudio2ã®I/F
 	IXAudio2* xaudio;
-	// XAudio2MasteringVoice‚ÌI/F
+	// XAudio2MasteringVoiceã®I/F
 	IXAudio2MasteringVoice* mvoice;
-	// Šeƒ`ƒƒƒ“ƒlƒ‹
+	// å„ãƒãƒ£ãƒ³ãƒãƒ«
 	std::deque<VoiceManager> voices;
 
-	// ƒRƒ}ƒ“ƒh‚ğ”ñ“¯Šú‚Å“Š‚°‚éi–ß‚è’l‚È‚µj
+	// ã‚³ãƒãƒ³ãƒ‰ã‚’éåŒæœŸã§æŠ•ã’ã‚‹ï¼ˆæˆ»ã‚Šå€¤ãªã—ï¼‰
 	void SetCommandAsync(AS_ARGS_BASE *command)
 	{
 		std::lock_guard<std::mutex> lock(this->commt);
 		this->comqueue.push(std::move(command));
 	}
 
-	// ƒRƒ}ƒ“ƒh‚ğ–ß‚è’l•t‚«‚Å“Š‚°‚é
+	// ã‚³ãƒãƒ³ãƒ‰ã‚’æˆ»ã‚Šå€¤ä»˜ãã§æŠ•ã’ã‚‹
 	std::future<AS_RETVAL> SetCommandSync(AS_ARGS_BASE* command)
 	{
 		std::promise<AS_RETVAL> r;
@@ -230,12 +277,12 @@ public:
 		return _r;
 	}
 
-	// ƒRƒ}ƒ“ƒh‚ğóM‚·‚é
+	// ã‚³ãƒãƒ³ãƒ‰ã‚’å—ä¿¡ã™ã‚‹
 	bool GetCommand(AS_ARGS_BASE** command)
 	{
 		std::lock_guard<std::mutex> lock(this->commt);
 		if (this->comqueue.empty()) {
-			// ‹ó‚È‚Ì‚Åƒ_ƒ~[‚ğ•Ô‚·
+			// ç©ºãªã®ã§ãƒ€ãƒŸãƒ¼ã‚’è¿”ã™
 			return false;
 		}
 		*command = this->comqueue.front();
@@ -243,7 +290,7 @@ public:
 		return true;
 	}
 
-	// ‰“š‚ğ•Ô‚·
+	// å¿œç­”ã‚’è¿”ã™
 	void SetRetval(SM_RECEIVE recv, int arg0, void* arg1, void* arg2)
 	{
 		std::lock_guard<std::mutex> lock(this->commt);
@@ -263,26 +310,26 @@ public:
 	}
 
 
-	// EngineCallback ‚Ì I/F ‚ÌÀ‘•
+	// EngineCallback ã® I/F ã®å®Ÿè£…
 
 	void OnProcessingPassEnd()
 	{
-		// ƒI[ƒfƒBƒIˆ—ƒpƒX‚ªI—¹‚µ‚½’¼Œã‚ÉŒÄ‚Ño‚³‚ê‚é
+		// ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªå‡¦ç†ãƒ‘ã‚¹ãŒçµ‚äº†ã—ãŸç›´å¾Œã«å‘¼ã³å‡ºã•ã‚Œã‚‹
 	}
 
 	void OnProcessingPassStart()
 	{
-		// ƒI[ƒfƒBƒIˆ—ƒpƒX‚ªŠJn‚³‚ê‚é’¼‘O‚ÉŒÄ‚Ño‚³‚ê‚é
+		// ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªå‡¦ç†ãƒ‘ã‚¹ãŒé–‹å§‹ã•ã‚Œã‚‹ç›´å‰ã«å‘¼ã³å‡ºã•ã‚Œã‚‹
 	}
 
 	void OnCriticalError(HRESULT Error)
 	{
-		// XAudio2‚ğ•Â‚¶‚ÄÄ‹N“®‚·‚é•K—v‚ª‚ ‚é‚ÉŒÄ‚Ño‚³‚ê‚é
+		// XAudio2ã‚’é–‰ã˜ã¦å†èµ·å‹•ã™ã‚‹å¿…è¦ãŒã‚ã‚‹æ™‚ã«å‘¼ã³å‡ºã•ã‚Œã‚‹
 
-		// ”²ˆFhttps://learn.microsoft.com/ja-jp/windows/win32/api/xaudio2/nf-xaudio2-ixaudio2enginecallback-oncriticalerror
-		// szDeviceId ƒpƒ‰ƒ[ƒ^[‚Å“Á’è‚ÌƒfƒoƒCƒX‚Ì ID ‚ğ IXAudio2::CreateMasteringVoice ‚Éw’è‚·‚é‚©AXAUDIO2_NO_VIRTUAL_AUDIO_CLIENT ƒtƒ‰ƒO‚ğg—p‚·‚é‚ÆA
-		// d‘å‚ÈƒGƒ‰[‚ª”­¶‚µAŠî‚É‚È‚é WASAPI ƒŒƒ“ƒ_ƒŠƒ“ƒO ƒfƒoƒCƒX‚ªg—p‚Å‚«‚È‚­‚È‚Á‚½ê‡‚Í OnCriticalError ‚ª”­¶‚µ‚Ü‚·B 
-		// ‚±‚ê‚ÍAƒwƒbƒhƒZƒbƒg‚âƒXƒs[ƒJ[‚ªæ‚èŠO‚³‚ê‚½ê‡‚âAUSB ƒI[ƒfƒBƒI ƒfƒoƒCƒX‚ªæ‚èŠO‚³‚ê‚½ê‡‚È‚Ç‚É”­¶‚·‚é‰Â”\«‚ª‚ ‚è‚Ü‚·B
+		// æŠœç²‹ï¼šhttps://learn.microsoft.com/ja-jp/windows/win32/api/xaudio2/nf-xaudio2-ixaudio2enginecallback-oncriticalerror
+		// szDeviceId ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã§ç‰¹å®šã®ãƒ‡ãƒã‚¤ã‚¹ã® ID ã‚’ IXAudio2::CreateMasteringVoice ã«æŒ‡å®šã™ã‚‹ã‹ã€XAUDIO2_NO_VIRTUAL_AUDIO_CLIENT ãƒ•ãƒ©ã‚°ã‚’ä½¿ç”¨ã™ã‚‹ã¨ã€
+		// é‡å¤§ãªã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã€åŸºã«ãªã‚‹ WASAPI ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° ãƒ‡ãƒã‚¤ã‚¹ãŒä½¿ç”¨ã§ããªããªã£ãŸå ´åˆã¯ OnCriticalError ãŒç™ºç”Ÿã—ã¾ã™ã€‚ 
+		// ã“ã‚Œã¯ã€ãƒ˜ãƒƒãƒ‰ã‚»ãƒƒãƒˆã‚„ã‚¹ãƒ”ãƒ¼ã‚«ãƒ¼ãŒå–ã‚Šå¤–ã•ã‚ŒãŸå ´åˆã‚„ã€USB ã‚ªãƒ¼ãƒ‡ã‚£ã‚ª ãƒ‡ãƒã‚¤ã‚¹ãŒå–ã‚Šå¤–ã•ã‚ŒãŸå ´åˆãªã©ã«ç™ºç”Ÿã™ã‚‹å¯èƒ½æ€§ãŒã‚ã‚Šã¾ã™ã€‚
 
 		
 	}
@@ -292,45 +339,45 @@ public:
 
 
 
-// ŠÇ——pƒnƒ“ƒhƒ‹
+// ç®¡ç†ç”¨ãƒãƒ³ãƒ‰ãƒ«
 std::shared_ptr<StreamManager> mgr_handle = std::make_shared<StreamManager>();
 
 
-// ƒI[ƒfƒBƒIƒXƒgƒŠ[ƒ€‰Šú‰»ˆ—
+// ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªã‚¹ãƒˆãƒªãƒ¼ãƒ åˆæœŸåŒ–å‡¦ç†
 bool InitAudioStream()
 {
-	// ‚Ü‚¸‚Í COM‚Ì‰Šú‰»
+	// ã¾ãšã¯ COMã®åˆæœŸåŒ–
 	HRESULT hr = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 	if (FAILED(hr)) {
-		// COM‰Šú‰»‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] AudioStreamThread can't initialized : COM‰Šú‰»‚É¸”s hr={0:08X}", hr));
+		// COMåˆæœŸåŒ–ã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : COMåˆæœŸåŒ–ã«å¤±æ•— hr={0:08X}", hr));
 		return false;
 	}
-	// XAudio2‰Šú‰»
+	// XAudio2åˆæœŸåŒ–
 	hr = ::XAudio2Create(&(mgr_handle->xaudio), 0, XAUDIO2_DEFAULT_PROCESSOR);
 	if (FAILED(hr)) {
-		// XAudio2‚Ì‰Šú‰»‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] AudioStreamThread can't initialized : XAudio2‰Šú‰»‚É¸”s hr={0:08X}", hr));
+		// XAudio2ã®åˆæœŸåŒ–ã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : XAudio2åˆæœŸåŒ–ã«å¤±æ•— hr={0:08X}", hr));
 		return false;
 	}
-	// EngineCallback‚Ìİ’è
+	// EngineCallbackã®è¨­å®š
 	hr = mgr_handle->xaudio->RegisterForCallbacks(mgr_handle.get());
 	if (FAILED(hr)) {
-		// XAudio2‚ÌCallbackİ’è‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] AudioStreamThread can't initialized : XAudio2‰Šú‰»‚É¸”s hr={0:08X}", hr));
+		// XAudio2ã®Callbackè¨­å®šã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : XAudio2åˆæœŸåŒ–ã«å¤±æ•— hr={0:08X}", hr));
 		return false;
 	}
-	// XAudio2MasteringVoice‰Šú‰»
+	// XAudio2MasteringVoiceåˆæœŸåŒ–
 	hr = mgr_handle->xaudio->CreateMasteringVoice(&(mgr_handle->mvoice), 2, XAUDIO2_DEFAULT_SAMPLERATE, 0, NULL, NULL, AUDIO_STREAM_CATEGORY::AudioCategory_Other);
 	if (FAILED(hr)) {
-		// XAudio2MasteringVoice‚Ì‰Šú‰»‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] AudioStreamThread can't initialized : XAudio2MasteringVoice‰Šú‰»‚É¸”s hr={0:08X}", hr));
+		// XAudio2MasteringVoiceã®åˆæœŸåŒ–ã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : XAudio2MasteringVoiceåˆæœŸåŒ–ã«å¤±æ•— hr={0:08X}", hr));
 		return false;
 	}
 	return true;
 }
 
-// ƒ`ƒƒƒ“ƒlƒ‹Šm•Ûˆ—
+// ãƒãƒ£ãƒ³ãƒãƒ«ç¢ºä¿å‡¦ç†
 int MakeChannelAudioStream(const WAVEFORMATEX &format, int bufsamples, std::function<void(void*, int, void *)> callback)
 {
 	HRESULT hr;
@@ -338,99 +385,87 @@ int MakeChannelAudioStream(const WAVEFORMATEX &format, int bufsamples, std::func
 	mgr_handle->voices.push_back(VoiceManager(mgr_handle->logfunc, callback, bufsamples, format.nBlockAlign));
 	int idx = (int)(mgr_handle->voices.size() - 1);
 
-	hr = mgr_handle->xaudio->CreateSourceVoice(&sourceV, &format, 0, 2.0F, nullptr, NULL, NULL);
+	hr = mgr_handle->xaudio->CreateSourceVoice(&sourceV, &format, 0, 2.0F, &mgr_handle->voices[idx], NULL, NULL);
 	if (FAILED(hr)) {
-		// SourceVoiceì¬‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] sourcevoice can't created : SourceVoiceì¬‚É¸”s hr={0:08X}", hr));
+		// SourceVoiceä½œæˆã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] sourcevoice can't created : SourceVoiceä½œæˆã«å¤±æ•— hr={0:08X}", hr));
 		return -1;
 	}
 
-	// ì¬o—ˆ‚½SourceVoice‚ğ“o˜^‚µ‚Äindex‚ğ•Ô‚·
+	// ä½œæˆå‡ºæ¥ãŸSourceVoiceã‚’ç™»éŒ²ã—ã¦indexã‚’è¿”ã™
 	mgr_handle->voices[idx].sourceV = sourceV;
 
 	return idx;
 }
 
-// ƒ`ƒƒƒ“ƒlƒ‹Ä¶ˆ—
+// ãƒãƒ£ãƒ³ãƒãƒ«å†ç”Ÿå‡¦ç†
 bool PlayChannelAudioStream(int ch)
 {
 	HRESULT hr;
 
-	// Ä¶‚Ì‘O‚É‚Q‰ñƒR[ƒ‹ƒoƒbƒN‚ğŒÄ‚Ño‚·
-	XAUDIO2_BUFFER* _b;
-	_b = mgr_handle->voices[ch].NextBuffer();
-	mgr_handle->logfunc(std::format("callbacked 1st. buf={0:p},{1:p},{2:p}", (void *)_b, (void *)_b->pAudioData, (void *)_b->pContext));
-	mgr_handle->voices[ch].wavecallback((void*)_b->pAudioData, mgr_handle->voices[ch].callbacksamples, nullptr);
-	hr = mgr_handle->voices[ch].sourceV->SubmitSourceBuffer(_b);
-	if (FAILED(hr)) {
-		// ƒoƒbƒtƒ@[‘—‚è‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] voice{0}-{1} can't submit buffer : hr={2:08X}", ch, 0, hr));
-		return false;
-	}
-	_b = mgr_handle->voices[ch].NextBuffer();
-	mgr_handle->logfunc(std::format("callbacked 2nd. buf={0:p},{1:p},{2:p}", (void *)_b, (void *)_b->pAudioData, (void*)_b->pContext));
-	mgr_handle->voices[ch].wavecallback((void*)_b->pAudioData, mgr_handle->voices[ch].callbacksamples, nullptr);
-	hr = mgr_handle->voices[ch].sourceV->SubmitSourceBuffer(_b);
-	if (FAILED(hr)) {
-		// ƒoƒbƒtƒ@[‘—‚è‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] voice{0}-{1} can't submit buffer : hr={2:08X}", ch, 1, hr));
-		return false;
-	}
+	// å†ç”Ÿé–‹å§‹å‰ã«ã€ã¾ãšãƒãƒƒãƒ•ã‚¡ä¸€ã¤ç›®ã®æº–å‚™
+	mgr_handle->voices[ch].PrepareBuffer();
 
-	// Ä¶ŠJn
-	mgr_handle->logfunc(std::format("play start."));
+	// ä½œã£ãŸãƒãƒƒãƒ•ã‚¡ã‚’ã‚­ãƒ¥ãƒ¼ã¸ç™»éŒ²
+	mgr_handle->voices[ch].SubmitBuffer();
+
+	// ï¼’ã¤ã‚ã®æº–å‚™ã‚’ã™ã‚‹
+	mgr_handle->voices[ch].PrepareBuffer();
+
+	// å†ç”Ÿé–‹å§‹
+	mgr_handle->logfunc("play start.");
 	hr = mgr_handle->voices[ch].sourceV->Start(0, 0);
 
 	if (FAILED(hr)) {
-		// Ä¶ŠJn‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] voice{0} can't play : hr={1:08X}", ch, hr));
+		// å†ç”Ÿé–‹å§‹ã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] voice{0} can't play : hr={1:08X}", ch, hr));
 		return false;
 	}
-
-	// ‚µ‚Éó‘Ô‚ğæ‚Á‚ÄŒ©‚é
-	::Sleep(0);
-	XAUDIO2_VOICE_STATE state;
-	mgr_handle->voices[ch].sourceV->GetState(&state, 0);
-	mgr_handle->OutputLog(std::format("[INFO] state pContext={0:p}, Queued={1:d}, playedsample={2:d}", state.pCurrentBufferContext, state.BuffersQueued, state.SamplesPlayed));
 
 	return true;
 }
 
-// ƒ`ƒƒƒ“ƒlƒ‹’â~ˆ—
+// ãƒãƒ£ãƒ³ãƒãƒ«åœæ­¢å‡¦ç†
 bool StopChannelAudioStream(int ch)
 {
 	HRESULT hr;
 
 	hr = mgr_handle->voices[ch].sourceV->Stop(0, 0);
 	if (FAILED(hr)) {
-		// ’â~‚É¸”s
-		mgr_handle->OutputLog(std::format("[ERROR] sourcevoice{0:d} can't stopped : Stop()‚É¸”s hr={1:08X}", ch, hr));
+		// åœæ­¢ã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] sourcevoice{0:d} can't stopped : Stop()ã«å¤±æ•— hr={1:08X}", ch, hr));
 		return false;
 	}
-
+	// ãƒãƒƒãƒ•ã‚¡ã‚’ãƒªãƒ•ãƒ¬ãƒƒã‚·ãƒ¥ã™ã‚‹
+	hr = mgr_handle->voices[ch].sourceV->FlushSourceBuffers();
+	if (FAILED(hr)) {
+		// ãƒãƒƒãƒ•ã‚¡ã®ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã«å¤±æ•—
+		mgr_handle->OutputLog(fmt::format("[ERROR] sourcevoice{0:d} can't flushed : FlushSourceBuffers()ã«å¤±æ•— hr={1:08X}", ch, hr));
+		return false;
+	}
 	return true;
 }
 
-// ƒI[ƒfƒBƒIƒXƒgƒŠ[ƒ€‰ğ•úˆ—
+// ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªã‚¹ãƒˆãƒªãƒ¼ãƒ è§£æ”¾å‡¦ç†
 bool ReleaseAudioStream()
 {
-	// XAudio2‚ğ‰ğ•úi‚·‚é‚ÆŠÖ˜A‚µ‚Ä‚·‚×‚Ä‚ÌƒIƒuƒWƒFƒNƒg‚à‰ğ•ú‚³‚ê‚é–Í—lj
+	// XAudio2ã‚’è§£æ”¾ï¼ˆã™ã‚‹ã¨é–¢é€£ã—ã¦ã™ã¹ã¦ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚‚è§£æ”¾ã•ã‚Œã‚‹æ¨¡æ§˜ï¼‰
 	if (mgr_handle->xaudio != nullptr) {
 		StopChannelAudioStream(0);
 		mgr_handle->xaudio->Release();
 		mgr_handle->xaudio = nullptr;
 		mgr_handle->mvoice = nullptr;
 	}
-	// COM‚Ì‰ğ•ú
+	// COMã®è§£æ”¾
 	::CoUninitialize();
 	return true;
 }
 
 
-// ƒI[ƒfƒBƒIƒXƒgƒŠ[ƒ€ˆ—ƒƒCƒ“ƒXƒŒƒbƒh
-DWORD WINAPI AudioStreamProcThread(void* _)
+// ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªã‚¹ãƒˆãƒªãƒ¼ãƒ å‡¦ç†ãƒ¡ã‚¤ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰
+unsigned int WINAPI AudioStreamProcThread(void* _)
 {
-	mgr_handle->OutputLog(std::format("[DEBUG] bootup thread"));
+	mgr_handle->OutputLog(fmt::format("[DEBUG] bootup thread"));
 
 	bool isLooped = true;
 	AS_ARGS_INIT* c_init;
@@ -441,16 +476,31 @@ DWORD WINAPI AudioStreamProcThread(void* _)
 	std::vector<int> playingch;
 	bool _r;
 	int ch;
+	int errcnt = 0;
 	do {
-		// ƒRƒ}ƒ“ƒhæ“¾
+		// ã‚³ãƒãƒ³ãƒ‰å–å¾—
 		AS_ARGS_BASE *args;
 		_r = mgr_handle->GetCommand(&args);
 
 		if ( _r == false) {
-			// æ“¾o—ˆ‚È‚©‚Á‚½
-			// ƒoƒbƒtƒ@‹Ÿ‹‹ƒCƒxƒ“ƒgŠÄ‹ˆ—‚ğ“ü‚ê‚Ä•K—v‚É‰‚¶‚ÄƒR[ƒ‹ƒoƒbƒN‚ğŒÄ‚Ño‚·
+			// å–å¾—å‡ºæ¥ãªã‹ã£ãŸ
+			// ãƒãƒƒãƒ•ã‚¡ä¾›çµ¦ã‚¤ãƒ™ãƒ³ãƒˆç›£è¦–å‡¦ç†ã‚’å…¥ã‚Œã¦å¿…è¦ã«å¿œã˜ã¦ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚’å‘¼ã³å‡ºã™
 			if (playingch.empty() == false) {
-				_r = mgr_handle->voices[0].BufferCallback();
+				DWORD ret = ::WaitForSingleObject(mgr_handle->voices[0].notifyPrepared, 0);
+				if (ret == WAIT_FAILED)
+				{
+					// mgr_handle->OutputLog(fmt::format("[DEBUG] failed catch signal : HR={0:x},{1:d}.", ::GetLastError(), errcnt));
+					errcnt++;
+				} else
+				if (ret == WAIT_OBJECT_0) {
+					// æ¬¡ã®ãƒãƒƒãƒ•ã‚¡ã‚’æº–å‚™
+					mgr_handle->voices[0].PrepareBuffer();
+					mgr_handle->OutputLog(fmt::format("[DEBUG] preparebuffer called."));
+					_r = true;
+				}
+				else {
+					mgr_handle->OutputLog(fmt::format("[DEBUG] failed catch signal : ret={0:x}.", ret));
+				}
 			}
 			if (_r == false) {
 				::Sleep(0);
@@ -458,12 +508,12 @@ DWORD WINAPI AudioStreamProcThread(void* _)
 			continue;
 		}
 
-		mgr_handle->OutputLog(std::format("[DEBUG] command proc {0}", args->ToString()));
+		mgr_handle->OutputLog(fmt::format("[DEBUG] command proc {0}", args->ToString()));
 
-		// ƒRƒ}ƒ“ƒh•Êˆ—
+		// ã‚³ãƒãƒ³ãƒ‰åˆ¥å‡¦ç†
 		switch (args->GetCommand()) {
 		case SM_COMMAND::INIT:
-			// ‰Šú‰»
+			// åˆæœŸåŒ–
 			c_init = static_cast<AS_ARGS_INIT*>(args);
 			isLooped = true;
 			_r = InitAudioStream();
@@ -471,42 +521,42 @@ DWORD WINAPI AudioStreamProcThread(void* _)
 			break;
 
 		case SM_COMMAND::QUIT:
-			// I—¹
+			// çµ‚äº†
 			c_quit = static_cast<AS_ARGS_QUIT*>(args);
 			ReleaseAudioStream();
 			if (c_quit->IsTerminated()) {
-				// arg0 ‚ª 1 ‚Ì‚ÍƒXƒŒƒbƒh‚àI—¹‚³‚¹‚é
+				// arg0 ãŒ 1 ã®æ™‚ã¯ã‚¹ãƒ¬ãƒƒãƒ‰ã‚‚çµ‚äº†ã•ã›ã‚‹
 				isLooped = false;
 				mgr_handle->SetRetval(SM_RECEIVE::OK, 0, nullptr, nullptr);
 			}
 			break;
 
 		case SM_COMMAND::REBOOT:
-			// d‘å‚ÈƒGƒ‰[”­¶‚É‚æ‚èˆê’UI—¹‚µ‚ÄÄ“x‰Šú‰»
+			// é‡å¤§ãªã‚¨ãƒ©ãƒ¼ç™ºç”Ÿã«ã‚ˆã‚Šä¸€æ—¦çµ‚äº†ã—ã¦å†åº¦åˆæœŸåŒ–
 			ReleaseAudioStream();
 			InitAudioStream();
 			break;
 
 		case SM_COMMAND::MAKE_CH:
-			// ƒ`ƒƒƒ“ƒlƒ‹ì¬
+			// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆ
 			c_makech = static_cast<AS_ARGS_MAKECH*>(args);
 			ch = MakeChannelAudioStream(c_makech->GetFormat(), c_makech->GetBufferSamples(), c_makech->GetCallback());
 			mgr_handle->SetRetval((ch >= 0 ) ? SM_RECEIVE::OK : SM_RECEIVE::ERR, ch, nullptr, nullptr);
 			if (ch >= 0) {
-				// ‰‰‘tƒ`ƒƒƒ“ƒlƒ‹‚ğ“o˜^
+				// æ¼”å¥ãƒãƒ£ãƒ³ãƒãƒ«ã‚’ç™»éŒ²
 				playingch.push_back(ch);
 			}
 			break;
 
 		case SM_COMMAND::PLAY_CH:
-			// ƒ`ƒƒƒ“ƒlƒ‹Ä¶
+			// ãƒãƒ£ãƒ³ãƒãƒ«å†ç”Ÿ
 			c_playch = static_cast<AS_ARGS_PLAYCH*>(args);
 			_r = PlayChannelAudioStream(c_playch->GetChannel());
 			mgr_handle->SetRetval((_r) ? SM_RECEIVE::OK : SM_RECEIVE::ERR, c_playch->GetChannel(), nullptr, nullptr);
 			break;
 
 		case SM_COMMAND::STOP_CH:
-			// ƒ`ƒƒƒ“ƒlƒ‹’â~
+			// ãƒãƒ£ãƒ³ãƒãƒ«åœæ­¢
 			c_stopch = static_cast<AS_ARGS_STOPCH*>(args);
 			_r = StopChannelAudioStream(c_stopch->GetChannel());
 			mgr_handle->SetRetval((_r) ? SM_RECEIVE::OK : SM_RECEIVE::ERR, c_stopch->GetChannel(), nullptr, nullptr);
@@ -517,48 +567,48 @@ DWORD WINAPI AudioStreamProcThread(void* _)
 
 	} while (isLooped);
 
-	mgr_handle->OutputLog(std::format("[DEBUG] shutdown thread..."));
+	mgr_handle->OutputLog(fmt::format("[DEBUG] shutdown thread..."));
 	return 0;
 }
 
 
 
 
-// ‰Šú‰»
-// ˆø”F
-//		logfunc : ƒƒOo—Í‚Ì‚½‚ß‚ÌŠÖ”‚ğw’è‚·‚é
+// åˆæœŸåŒ–
+// å¼•æ•°ï¼š
+//		logfunc : ãƒ­ã‚°å‡ºåŠ›ã®ãŸã‚ã®é–¢æ•°ã‚’æŒ‡å®šã™ã‚‹
 bool Initialize_STMGR(std::function<void(std::string)> logfunc)
 {
-	// Šù‚É‰Šú‰»Ï‚İ‚È‚Ì‚Ånull‚ğ•Ô‚·
+	// æ—¢ã«åˆæœŸåŒ–æ¸ˆã¿ãªã®ã§nullã‚’è¿”ã™
 	if (mgr_handle->h_thread != nullptr)
 	{
 		if (logfunc != nullptr) {
-			logfunc(std::format("[ERROR] already initialized."));
+			logfunc(fmt::format("[ERROR] already initialized."));
 		}
 		return false;
 	}
 
-	// ‚Ü‚¸‚ÍƒXƒŒƒbƒhì¬
+	// ã¾ãšã¯ã‚¹ãƒ¬ãƒƒãƒ‰ä½œæˆ
 	mgr_handle->logfunc = logfunc;
-	mgr_handle->h_thread = ::CreateThread(NULL, 0, AudioStreamProcThread, NULL, 0, NULL);
+	mgr_handle->h_thread = (HANDLE)::_beginthreadex(NULL, 0, AudioStreamProcThread, NULL, 0, NULL);
 	if (mgr_handle->h_thread == NULL) {
-		// ƒXƒŒƒbƒh‚ªì‚ê‚È‚©‚Á‚½‚Ì‚ÅƒGƒ‰[
+		// ã‚¹ãƒ¬ãƒƒãƒ‰ãŒä½œã‚Œãªã‹ã£ãŸã®ã§ã‚¨ãƒ©ãƒ¼
 		if (logfunc != nullptr) {
-			logfunc( std::format("[ERROR] can't create thread"));
+			logfunc( fmt::format("[ERROR] can't create thread"));
 		}
 		return false;
 	}
 	
-	// ‰Šú‰»ƒRƒ}ƒ“ƒh”­s
+	// åˆæœŸåŒ–ã‚³ãƒãƒ³ãƒ‰ç™ºè¡Œ
 	std::shared_ptr<AS_ARGS_INIT> i = std::make_shared<AS_ARGS_INIT>();
 	auto _r = mgr_handle->SetCommandSync(i.get());
 	
-	// ‰Šú‰»‚É¸”s‚µ‚½‚çI—¹ˆ—‚ğŒÄ‚ñ‚Å nullptr ‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸã‚‰çµ‚äº†å‡¦ç†ã‚’å‘¼ã‚“ã§ nullptr ã‚’è¿”ã™
 	_r.wait();
 	if (_r.get().ret != SM_RECEIVE::OK) {
-		// ƒGƒ‰[”­¶
+		// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ
 		if (logfunc != nullptr) {
-			logfunc(std::format("[ERROR] failed initialized."));
+			logfunc(fmt::format("[ERROR] failed initialized."));
 		}
 		return false;
 	}
@@ -568,105 +618,105 @@ bool Initialize_STMGR(std::function<void(std::string)> logfunc)
 
 
 
-// I—¹ˆ—
-// ˆø”F‚È‚µ
+// çµ‚äº†å‡¦ç†
+// å¼•æ•°ï¼šãªã—
 void Release_STMGR()
 {
-	// ‰Šú‰»‚µ‚Ä‚¢‚È‚¢‚È‚Ì‚Ånull‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã—ã¦ã„ãªã„ãªã®ã§nullã‚’è¿”ã™
 	if (mgr_handle->h_thread == nullptr)
 	{
-		mgr_handle->OutputLog(std::format("[ERROR] not initialized AudioStream."));
+		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
 		return;
 	}
 
-	// I—¹ƒRƒ}ƒ“ƒh”­s
+	// çµ‚äº†ã‚³ãƒãƒ³ãƒ‰ç™ºè¡Œ
 	std::shared_ptr<AS_ARGS_QUIT> q = std::make_shared<AS_ARGS_QUIT>(true);
 	auto _r = mgr_handle->SetCommandSync(q.get());
 
-	// ‰Šú‰»‚É¸”s‚µ‚½‚çI—¹ˆ—‚ğŒÄ‚ñ‚Å nullptr ‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸã‚‰çµ‚äº†å‡¦ç†ã‚’å‘¼ã‚“ã§ nullptr ã‚’è¿”ã™
 	_r.wait();
 	if (_r.get().ret != SM_RECEIVE::OK) {
-		// ƒGƒ‰[”­¶
-		mgr_handle->OutputLog(std::format("[ERROR] failed released."));
+		// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ
+		mgr_handle->OutputLog(fmt::format("[ERROR] failed released."));
 		return;
 	}
-	// ƒXƒŒƒbƒh‚ªI—¹‚·‚é‚Ü‚Å‘Ò‚Â
+	// ã‚¹ãƒ¬ãƒƒãƒ‰ãŒçµ‚äº†ã™ã‚‹ã¾ã§å¾…ã¤
 	::WaitForSingleObject(mgr_handle->h_thread, INFINITE);
 	DWORD _ret;
 	do {
 		::GetExitCodeThread(mgr_handle->h_thread, &_ret);
 	} while (_ret == STILL_ACTIVE);
-	// ƒXƒŒƒbƒh‚Ìƒnƒ“ƒhƒ‹‚ğ•Â‚¶‚é
+	// ã‚¹ãƒ¬ãƒƒãƒ‰ã®ãƒãƒ³ãƒ‰ãƒ«ã‚’é–‰ã˜ã‚‹
 	::CloseHandle(mgr_handle->h_thread);
 	mgr_handle->h_thread = nullptr;
 }
 
 
 
-// ƒfƒoƒCƒXƒŠƒXƒgæ“¾
+// ãƒ‡ãƒã‚¤ã‚¹ãƒªã‚¹ãƒˆå–å¾—
 
-// ƒfƒoƒCƒX‘I‘ğ
+// ãƒ‡ãƒã‚¤ã‚¹é¸æŠ
 
-// ”\—Íæ“¾H
+// èƒ½åŠ›å–å¾—ï¼Ÿ
 
-// ”\—Í‚ÌƒZƒbƒg
+// èƒ½åŠ›ã®ã‚»ãƒƒãƒˆ
 
-// ƒ`ƒƒƒ“ƒlƒ‹ì¬
-// ˆø”Fformat : o—Í‚µ‚½‚¢”gŒ`î•ñ
-//       buffersamples : ‚P‰ñ‚ÌƒŠƒNƒGƒXƒg‚É•K—v‚Èƒoƒbƒtƒ@ƒTƒCƒYiƒTƒ“ƒvƒ‹”j
-// –ß’l : int <0 ‚ÅƒGƒ‰[A>=0‚Åì¬‚³‚ê‚½ƒ`ƒƒƒ“ƒlƒ‹‚Ìindex
+// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆ
+// å¼•æ•°ï¼šformat : å‡ºåŠ›ã—ãŸã„æ³¢å½¢æƒ…å ±
+//       buffersamples : ï¼‘å›ã®ãƒªã‚¯ã‚¨ã‚¹ãƒˆã«å¿…è¦ãªãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚ºï¼ˆã‚µãƒ³ãƒ—ãƒ«æ•°ï¼‰
+// æˆ»å€¤ : int <0 ã§ã‚¨ãƒ©ãƒ¼ã€>=0ã§ä½œæˆã•ã‚ŒãŸãƒãƒ£ãƒ³ãƒãƒ«ã®index
 int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void(void*, int, void *)> callbackf)
 {
-	// ‰Šú‰»‚µ‚Ä‚¢‚È‚¢‚È‚Ì‚Ånull‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã—ã¦ã„ãªã„ãªã®ã§nullã‚’è¿”ã™
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr )
 	{
-		mgr_handle->OutputLog(std::format("[ERROR] not initialized AudioStream."));
+		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
 		return -1;
 	}
 
-	// ƒ`ƒƒƒ“ƒlƒ‹ì¬ƒRƒ}ƒ“ƒh”­s
+	// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆã‚³ãƒãƒ³ãƒ‰ç™ºè¡Œ
 	std::shared_ptr<AS_ARGS_MAKECH> m = std::make_shared<AS_ARGS_MAKECH>(format, buffersamples, callbackf);
 	auto _r = mgr_handle->SetCommandSync(m.get());
 
-	// ‰Šú‰»‚É¸”s‚µ‚½‚çI—¹ˆ—‚ğŒÄ‚ñ‚Å nullptr ‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸã‚‰çµ‚äº†å‡¦ç†ã‚’å‘¼ã‚“ã§ nullptr ã‚’è¿”ã™
 	_r.wait();
 	auto rr = _r.get();
 	if (rr.ret != SM_RECEIVE::OK) {
-		// ƒGƒ‰[”­¶
-		mgr_handle->OutputLog(std::format("[ERROR] failed make channel."));
+		// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ
+		mgr_handle->OutputLog(fmt::format("[ERROR] failed make channel."));
 		return -1;
 	}
 
-	// Šm•Ûo—ˆ‚½ƒnƒ“ƒhƒ‹index‚ğ•Ô‚·
+	// ç¢ºä¿å‡ºæ¥ãŸãƒãƒ³ãƒ‰ãƒ«indexã‚’è¿”ã™
 	return rr.arg0;
 }
 
 
-// ƒ`ƒƒƒ“ƒlƒ‹”jŠü
+// ãƒãƒ£ãƒ³ãƒãƒ«ç ´æ£„
 
-// Ä¶ŠJn
-// ˆø”F ch : ƒ`ƒƒƒ“ƒlƒ‹‚Ìindex
-// –ß’lF true ‚ÅÄ¶ˆ—OK
-// ”õlFÄ¶‚ğn‚ß‚é‘O‚ÉA“n‚³‚ê‚½ƒR[ƒ‹ƒoƒbƒNŠÖ”‚ª‚Q‰ñŒÄ‚Ño‚³‚ê‚ÄAƒoƒbƒtƒ@‚Q‚Â•ª‚Ì”gŒ`ƒf[ƒ^‚Ìì¬‚ª•K—v‚Æ‚È‚è‚Ü‚·B
+// å†ç”Ÿé–‹å§‹
+// å¼•æ•°ï¼š ch : ãƒãƒ£ãƒ³ãƒãƒ«ã®index
+// æˆ»å€¤ï¼š true ã§å†ç”Ÿå‡¦ç†OK
+// å‚™è€ƒï¼šå†ç”Ÿã‚’å§‹ã‚ã‚‹å‰ã«ã€æ¸¡ã•ã‚ŒãŸã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ãŒï¼’å›å‘¼ã³å‡ºã•ã‚Œã¦ã€ãƒãƒƒãƒ•ã‚¡ï¼’ã¤åˆ†ã®æ³¢å½¢ãƒ‡ãƒ¼ã‚¿ã®ä½œæˆãŒå¿…è¦ã¨ãªã‚Šã¾ã™ã€‚
 bool PlayChannel_STMGR(int ch)
 {
-	// ‰Šú‰»‚µ‚Ä‚¢‚È‚¢‚È‚Ì‚Ånull‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã—ã¦ã„ãªã„ãªã®ã§nullã‚’è¿”ã™
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr)
 	{
-		mgr_handle->OutputLog(std::format("[ERROR] not initialized AudioStream."));
+		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
 		return false;
 	}
 
-	// ƒ`ƒƒƒ“ƒlƒ‹ì¬ƒRƒ}ƒ“ƒh”­s
+	// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆã‚³ãƒãƒ³ãƒ‰ç™ºè¡Œ
 	std::shared_ptr<AS_ARGS_PLAYCH> m = std::make_shared<AS_ARGS_PLAYCH>(ch);
 	auto _r = mgr_handle->SetCommandSync(m.get());
 
-	// ‰Šú‰»‚É¸”s‚µ‚½‚çI—¹ˆ—‚ğŒÄ‚ñ‚Å nullptr ‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸã‚‰çµ‚äº†å‡¦ç†ã‚’å‘¼ã‚“ã§ nullptr ã‚’è¿”ã™
 	_r.wait();
 	auto rr = _r.get();
 	if (rr.ret != SM_RECEIVE::OK) {
-		// ƒGƒ‰[”­¶
-		mgr_handle->OutputLog(std::format("[ERROR] failed make channel."));
+		// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ
+		mgr_handle->OutputLog(fmt::format("[ERROR] failed make channel."));
 		return false;
 	}
 
@@ -674,26 +724,26 @@ bool PlayChannel_STMGR(int ch)
 }
 
 
-// ’â~
+// åœæ­¢
 void StopChannel_STMGR(int ch)
 {
-	// ‰Šú‰»‚µ‚Ä‚¢‚È‚¢‚È‚Ì‚Ånull‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã—ã¦ã„ãªã„ãªã®ã§nullã‚’è¿”ã™
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr)
 	{
-		mgr_handle->OutputLog(std::format("[ERROR] not initialized AudioStream."));
+		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
 		return;
 	}
 
-	// ƒ`ƒƒƒ“ƒlƒ‹ì¬ƒRƒ}ƒ“ƒh”­s
+	// ãƒãƒ£ãƒ³ãƒãƒ«ä½œæˆã‚³ãƒãƒ³ãƒ‰ç™ºè¡Œ
 	std::shared_ptr<AS_ARGS_STOPCH> m = std::make_shared<AS_ARGS_STOPCH>(ch);
 	auto _r = mgr_handle->SetCommandSync(m.get());
 
-	// ‰Šú‰»‚É¸”s‚µ‚½‚çI—¹ˆ—‚ğŒÄ‚ñ‚Å nullptr ‚ğ•Ô‚·
+	// åˆæœŸåŒ–ã«å¤±æ•—ã—ãŸã‚‰çµ‚äº†å‡¦ç†ã‚’å‘¼ã‚“ã§ nullptr ã‚’è¿”ã™
 	_r.wait();
 	auto rr = _r.get();
 	if (rr.ret != SM_RECEIVE::OK) {
-		// ƒGƒ‰[”­¶
-		mgr_handle->OutputLog(std::format("[ERROR] failed make channel."));
+		// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ
+		mgr_handle->OutputLog(fmt::format("[ERROR] failed make channel."));
 		return;
 	}
 }

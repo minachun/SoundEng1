@@ -8,10 +8,12 @@
 #include <queue>
 #include <mutex>
 #include <future>
-#include <format>
 #include <functional>
 
-// ŠO•”ŒöŠJI/F
+#define FMT_HEADER_ONLY
+#include "include/fmt/core.h"
+
+// å¤–éƒ¨å…¬é–‹I/F
 
 
 
