@@ -7,12 +7,6 @@
 
 
 
-void consolelog(std::string mes)
-{
-	printf("%s\n", mes.c_str());
-}
-
-
 
 // 16bit整数のPSG
 class PSG16 {
@@ -128,27 +122,32 @@ void wavecallbackfunc(void* buf, int samples, void *ptr)
 {
 	if (ptr != nullptr) {
 		XAUDIO2_BUFFER* p = (XAUDIO2_BUFFER*)ptr;
-		consolelog(fmt::format("wavecallback {0:d}samples. ptr={1:p},{2:p} audiobytes={3:d} buffer={4:p} {5:d}", samples, buf, ptr, p->AudioBytes, (void *)p->pAudioData, p->PlayBegin));
+		// LOG_INFO(logger, "wavecallback {0:d}samples. ptr={1:p} audiobytes={2:d} buffer={3:p} {4:d}", samples, buf, (int)p->AudioBytes, (void *)p->pAudioData, (int)p->PlayBegin);
+		LOG_INFO(logger, "wavecallback {0:d}samples. audiobytes={1:d}", samples, (int)p->AudioBytes);
 	}
 	else {
-		// consolelog(std::format("wavecallback {0:d}samples. ptr={1:p},{2:p}", samples, buf, ptr));
+		LOG_INFO(logger, "wavecallback {0:d}samples.", samples);
 	}
 	int16_t* pbuf = (int16_t*)buf;
 	psg->MakeWave(pbuf,samples);
 }
 
+quill::Logger* logger;
 
-int main(int argc, char* argv[])
+
+int main()
 {
-	// テスト
+	quill::Backend::start();
+	auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1");
+	logger = quill::Frontend::create_or_get_logger("root", std::move(console_sink));
 
-	std::function<void(std::string)> logf = consolelog;
-	bool r = Initialize_STMGR(logf);
-	printf("return %d\n", r);
+	// テスト
+	bool r = Initialize_STMGR();
+	LOG_INFO(logger, "return {}", r);
 
 	psg = new PSG16(48000);
 
-	WAVEFORMATEX w;
+	WAVEFORMATEX w{};
 	w.wFormatTag = WAVE_FORMAT_PCM;
 	w.nChannels = 2;
 	w.nSamplesPerSec = 48000;
@@ -157,14 +156,14 @@ int main(int argc, char* argv[])
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
 	std::function<void(void*, int, void *)> cbf = wavecallbackfunc;
 	int ch = MakeChannel_STMGR(w, w.nSamplesPerSec / 100, cbf);
-	printf("ch %d\n", ch);
+	LOG_INFO(logger, "ch {}", ch);
 	psg->SetFreq(440.0);
 	psg->SetVolume(0.7f, 0.3f);
 	psg->SetWaveType(8);
 	psg->SetKeyOn();
 
 	r = PlayChannel_STMGR(ch);
-	printf("play = %d\n", r);
+	LOG_INFO(logger, "play = {}", r);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 20.0);
 	psg->SetVolume(0.3f, 0.7f);

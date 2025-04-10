@@ -16,6 +16,9 @@
     <Filter Include="ヘッダー ファイル\fmt">
       <UniqueIdentifier>{7c9a77f0-ee6e-4d2d-b837-45b130201d19}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\quill">
+      <UniqueIdentifier>{7b6701b7-2fbc-4097-bd03-ac761ec24653}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="streamingmgr.cpp">
@@ -70,6 +73,42 @@
     </ClInclude>
     <ClInclude Include="include\fmt\xchar.h">
       <Filter>ヘッダー ファイル\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\Backend.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\BackendTscClock.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\CsvWriter.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\DeferredFormatCodec.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\DirectFormatCodec.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\Frontend.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\Logger.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\LogMacros.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\StopWatch.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\StringRef.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\UserClockSource.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
+    </ClInclude>
+    <ClInclude Include="include\quill\Utility.h">
+      <Filter>ヘッダー ファイル\quill</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

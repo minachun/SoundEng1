@@ -130,7 +130,6 @@ class VoiceManager : public IXAudio2VoiceCallback
 {
 public:
 	IXAudio2SourceVoice* sourceV;
-	std::function<void(std::string)> logfunc;		// ログ関数
 	std::function<void(void*, int, void *)> wavecallback;		// 波形要求コールバック関数
 	int callbacksamples;
 	int bufsize;
@@ -181,13 +180,13 @@ public:
 	{
 		if (BytesRequired > 0)
 		{
-			this->logfunc(fmt::format("OnVoiceProcessingPassStart {0:d}", BytesRequired));
+			LOG_INFO(logger, "OnVoiceProcessingPassStart {0:d}", BytesRequired);
 		}
 	}
 
 	void PrepareBuffer()
 	{
-		this->logfunc(fmt::format("PrepareBuffer {0:d}", this->prepare_index));
+		//this->logfunc(fmt::format("PrepareBuffer {0:d}", this->prepare_index));
 		XAUDIO2_BUFFER* _b = &this->xbuffer[this->prepare_index];
 		// コールバック呼び出し
 		this->wavecallback((void*)_b->pAudioData, this->callbacksamples, nullptr);
@@ -196,23 +195,23 @@ public:
 
 	void SubmitBuffer()
 	{
-		this->logfunc(fmt::format("SubmitBuffer {0:d}", this->submit_index));
+		//this->logfunc(fmt::format("SubmitBuffer {0:d}", this->submit_index));
 		XAUDIO2_BUFFER* _b = &this->xbuffer[this->submit_index];
 		// バッファをsubmitする
 		HRESULT hr = this->sourceV->SubmitSourceBuffer(_b, nullptr);
 		if (FAILED(hr)) {
-			this->logfunc(fmt::format("[ERROR] Failed submit buffer: hr={0:x}", hr));
+			LOG_INFO(logger, "[ERROR] Failed submit buffer: hr={0:x}", hr);
 		}
 		this->submit_index = 1 - this->submit_index;
 	}
 
-	VoiceManager(std::function<void(std::string)> _logfunc, std::function<void(void*, int, void *)> _callback, int _blksamples, int _size )
-		: sourceV(nullptr), logfunc(_logfunc), wavecallback(_callback), callbacksamples(_blksamples), bufsize(_size)
+	VoiceManager(std::function<void(void*, int, void *)> _callback, int _blksamples, int _size )
+		: sourceV(nullptr), wavecallback(_callback), callbacksamples(_blksamples), bufsize(_size)
 	{
 		int bsize = this->callbacksamples * this->bufsize;
-		this->logfunc(fmt::format("Makebuffer {0:d}bytes.", bsize));
+		LOG_INFO(logger, "Makebuffer {0:d}bytes.", bsize);
 		this->bufbody[0] = std::make_shared<BYTE>(bsize);
-		this->logfunc(fmt::format("Makebuffer {0:d}bytes.", bsize));
+		LOG_INFO(logger, "Makebuffer {0:d}bytes.", bsize);
 		this->bufbody[1] = std::make_shared<BYTE>(bsize);
 		for (int _i = 0; _i < 2; _i++) {
 			xbuffer[_i].Flags = 0;
@@ -245,7 +244,6 @@ public:
 	std::mutex commt;
 	std::queue<AS_ARGS_BASE *> comqueue;		// コマンドキュー
 	std::queue<std::promise<AS_RETVAL>> retqueue;		// 応答キュー
-	std::function<void(std::string)> logfunc;		// ログ関数
 	void* log_instance;
 	// XAudio2のI/F
 	IXAudio2* xaudio;
@@ -298,14 +296,7 @@ public:
 		this->retqueue.pop();
 	}
 
-	void OutputLog(std::string log)
-	{
-		if (this->logfunc != nullptr) {
-			this->logfunc(log);
-		}
-	}
-
-	StreamManager() : h_thread(nullptr), logfunc(nullptr), log_instance(nullptr), xaudio(nullptr), mvoice(nullptr)
+	StreamManager() : h_thread(nullptr), log_instance(nullptr), xaudio(nullptr), mvoice(nullptr)
 	{
 	}
 
@@ -350,28 +341,28 @@ bool InitAudioStream()
 	HRESULT hr = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 	if (FAILED(hr)) {
 		// COM初期化に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : COM初期化に失敗 hr={0:08X}", hr));
+		LOG_INFO(logger, "[ERROR] AudioStreamThread can't initialized : COM初期化に失敗 hr={0:08X}", hr);
 		return false;
 	}
 	// XAudio2初期化
 	hr = ::XAudio2Create(&(mgr_handle->xaudio), 0, XAUDIO2_DEFAULT_PROCESSOR);
 	if (FAILED(hr)) {
 		// XAudio2の初期化に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : XAudio2初期化に失敗 hr={0:08X}", hr));
+		LOG_INFO(logger, "[ERROR] AudioStreamThread can't initialized : XAudio2初期化に失敗 hr={0:08X}", hr);
 		return false;
 	}
 	// EngineCallbackの設定
 	hr = mgr_handle->xaudio->RegisterForCallbacks(mgr_handle.get());
 	if (FAILED(hr)) {
 		// XAudio2のCallback設定に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : XAudio2初期化に失敗 hr={0:08X}", hr));
+		LOG_INFO(logger, "[ERROR] AudioStreamThread can't initialized : XAudio2初期化に失敗 hr={0:08X}", hr);
 		return false;
 	}
 	// XAudio2MasteringVoice初期化
 	hr = mgr_handle->xaudio->CreateMasteringVoice(&(mgr_handle->mvoice), 2, XAUDIO2_DEFAULT_SAMPLERATE, 0, NULL, NULL, AUDIO_STREAM_CATEGORY::AudioCategory_Other);
 	if (FAILED(hr)) {
 		// XAudio2MasteringVoiceの初期化に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] AudioStreamThread can't initialized : XAudio2MasteringVoice初期化に失敗 hr={0:08X}", hr));
+		LOG_INFO(logger, "[ERROR] AudioStreamThread can't initialized : XAudio2MasteringVoice初期化に失敗 hr={0:08X}", hr);
 		return false;
 	}
 	return true;
@@ -382,13 +373,13 @@ int MakeChannelAudioStream(const WAVEFORMATEX &format, int bufsamples, std::func
 {
 	HRESULT hr;
 	IXAudio2SourceVoice* sourceV;
-	mgr_handle->voices.push_back(VoiceManager(mgr_handle->logfunc, callback, bufsamples, format.nBlockAlign));
+	mgr_handle->voices.push_back(VoiceManager(callback, bufsamples, format.nBlockAlign));
 	int idx = (int)(mgr_handle->voices.size() - 1);
 
 	hr = mgr_handle->xaudio->CreateSourceVoice(&sourceV, &format, 0, 2.0F, &mgr_handle->voices[idx], NULL, NULL);
 	if (FAILED(hr)) {
 		// SourceVoice作成に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] sourcevoice can't created : SourceVoice作成に失敗 hr={0:08X}", hr));
+		LOG_INFO(logger, "[ERROR] sourcevoice can't created : SourceVoice作成に失敗 hr={0:08X}", hr);
 		return -1;
 	}
 
@@ -413,12 +404,12 @@ bool PlayChannelAudioStream(int ch)
 	mgr_handle->voices[ch].PrepareBuffer();
 
 	// 再生開始
-	mgr_handle->logfunc("play start.");
+	LOG_INFO(logger, "play start.");
 	hr = mgr_handle->voices[ch].sourceV->Start(0, 0);
 
 	if (FAILED(hr)) {
 		// 再生開始に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] voice{0} can't play : hr={1:08X}", ch, hr));
+		LOG_INFO(logger, "[ERROR] voice{0} can't play : hr={1:08X}", ch, hr);
 		return false;
 	}
 
@@ -433,14 +424,14 @@ bool StopChannelAudioStream(int ch)
 	hr = mgr_handle->voices[ch].sourceV->Stop(0, 0);
 	if (FAILED(hr)) {
 		// 停止に失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] sourcevoice{0:d} can't stopped : Stop()に失敗 hr={1:08X}", ch, hr));
+		LOG_INFO(logger, "[ERROR] sourcevoice{0:d} can't stopped : Stop()に失敗 hr={1:08X}", ch, hr);
 		return false;
 	}
 	// バッファをリフレッシュする
 	hr = mgr_handle->voices[ch].sourceV->FlushSourceBuffers();
 	if (FAILED(hr)) {
 		// バッファのフラッシュに失敗
-		mgr_handle->OutputLog(fmt::format("[ERROR] sourcevoice{0:d} can't flushed : FlushSourceBuffers()に失敗 hr={1:08X}", ch, hr));
+		LOG_INFO(logger, "[ERROR] sourcevoice{0:d} can't flushed : FlushSourceBuffers()に失敗 hr={1:08X}", ch, hr);
 		return false;
 	}
 	return true;
@@ -465,7 +456,7 @@ bool ReleaseAudioStream()
 // オーディオストリーム処理メインスレッド
 unsigned int WINAPI AudioStreamProcThread(void* _)
 {
-	mgr_handle->OutputLog(fmt::format("[DEBUG] bootup thread"));
+	LOG_INFO(logger, "[DEBUG] bootup thread");
 
 	bool isLooped = true;
 	AS_ARGS_INIT* c_init;
@@ -495,11 +486,11 @@ unsigned int WINAPI AudioStreamProcThread(void* _)
 				if (ret == WAIT_OBJECT_0) {
 					// 次のバッファを準備
 					mgr_handle->voices[0].PrepareBuffer();
-					mgr_handle->OutputLog(fmt::format("[DEBUG] preparebuffer called."));
+					LOG_INFO(logger, "[DEBUG] preparebuffer called.");
 					_r = true;
 				}
 				else {
-					mgr_handle->OutputLog(fmt::format("[DEBUG] failed catch signal : ret={0:x}.", ret));
+					LOG_INFO(logger, "[DEBUG] failed catch signal : ret={0:x}.", ret);
 				}
 			}
 			if (_r == false) {
@@ -508,7 +499,7 @@ unsigned int WINAPI AudioStreamProcThread(void* _)
 			continue;
 		}
 
-		mgr_handle->OutputLog(fmt::format("[DEBUG] command proc {0}", args->ToString()));
+		LOG_INFO(logger, "[DEBUG] command proc {0}", args->ToString());
 
 		// コマンド別処理
 		switch (args->GetCommand()) {
@@ -567,7 +558,7 @@ unsigned int WINAPI AudioStreamProcThread(void* _)
 
 	} while (isLooped);
 
-	mgr_handle->OutputLog(fmt::format("[DEBUG] shutdown thread..."));
+	LOG_INFO(logger, "[DEBUG] shutdown thread...");
 	return 0;
 }
 
@@ -577,25 +568,20 @@ unsigned int WINAPI AudioStreamProcThread(void* _)
 // 初期化
 // 引数：
 //		logfunc : ログ出力のための関数を指定する
-bool Initialize_STMGR(std::function<void(std::string)> logfunc)
+bool Initialize_STMGR()
 {
 	// 既に初期化済みなのでnullを返す
 	if (mgr_handle->h_thread != nullptr)
 	{
-		if (logfunc != nullptr) {
-			logfunc(fmt::format("[ERROR] already initialized."));
-		}
+		LOG_INFO(logger, "[ERROR] already initialized.");
 		return false;
 	}
 
 	// まずはスレッド作成
-	mgr_handle->logfunc = logfunc;
 	mgr_handle->h_thread = (HANDLE)::_beginthreadex(NULL, 0, AudioStreamProcThread, NULL, 0, NULL);
 	if (mgr_handle->h_thread == NULL) {
 		// スレッドが作れなかったのでエラー
-		if (logfunc != nullptr) {
-			logfunc( fmt::format("[ERROR] can't create thread"));
-		}
+		LOG_INFO(logger, "[ERROR] can't create thread");
 		return false;
 	}
 	
@@ -607,9 +593,7 @@ bool Initialize_STMGR(std::function<void(std::string)> logfunc)
 	_r.wait();
 	if (_r.get().ret != SM_RECEIVE::OK) {
 		// エラー発生
-		if (logfunc != nullptr) {
-			logfunc(fmt::format("[ERROR] failed initialized."));
-		}
+		LOG_INFO(logger, "[ERROR] failed initialized.");
 		return false;
 	}
 
@@ -625,7 +609,7 @@ void Release_STMGR()
 	// 初期化していないなのでnullを返す
 	if (mgr_handle->h_thread == nullptr)
 	{
-		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
+		LOG_INFO(logger, "[ERROR] not initialized AudioStream.");
 		return;
 	}
 
@@ -637,7 +621,7 @@ void Release_STMGR()
 	_r.wait();
 	if (_r.get().ret != SM_RECEIVE::OK) {
 		// エラー発生
-		mgr_handle->OutputLog(fmt::format("[ERROR] failed released."));
+		LOG_INFO(logger, "[ERROR] failed released.");
 		return;
 	}
 	// スレッドが終了するまで待つ
@@ -670,7 +654,7 @@ int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void
 	// 初期化していないなのでnullを返す
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr )
 	{
-		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
+		LOG_INFO(logger, "[ERROR] not initialized AudioStream.");
 		return -1;
 	}
 
@@ -683,7 +667,7 @@ int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void
 	auto rr = _r.get();
 	if (rr.ret != SM_RECEIVE::OK) {
 		// エラー発生
-		mgr_handle->OutputLog(fmt::format("[ERROR] failed make channel."));
+		LOG_INFO(logger, "[ERROR] failed make channel.");
 		return -1;
 	}
 
@@ -703,7 +687,7 @@ bool PlayChannel_STMGR(int ch)
 	// 初期化していないなのでnullを返す
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr)
 	{
-		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
+		LOG_INFO(logger, "[ERROR] not initialized AudioStream.");
 		return false;
 	}
 
@@ -716,7 +700,7 @@ bool PlayChannel_STMGR(int ch)
 	auto rr = _r.get();
 	if (rr.ret != SM_RECEIVE::OK) {
 		// エラー発生
-		mgr_handle->OutputLog(fmt::format("[ERROR] failed make channel."));
+		LOG_INFO(logger, "[ERROR] failed make channel.");
 		return false;
 	}
 
@@ -730,7 +714,7 @@ void StopChannel_STMGR(int ch)
 	// 初期化していないなのでnullを返す
 	if (mgr_handle->h_thread == nullptr || mgr_handle->xaudio == nullptr)
 	{
-		mgr_handle->OutputLog(fmt::format("[ERROR] not initialized AudioStream."));
+		LOG_INFO(logger, "[ERROR] not initialized AudioStream.");
 		return;
 	}
 
@@ -743,7 +727,7 @@ void StopChannel_STMGR(int ch)
 	auto rr = _r.get();
 	if (rr.ret != SM_RECEIVE::OK) {
 		// エラー発生
-		mgr_handle->OutputLog(fmt::format("[ERROR] failed make channel."));
+		LOG_INFO(logger, "[ERROR] failed make channel.");
 		return;
 	}
 }
