@@ -14,16 +14,16 @@
 #define FMT_HEADER_ONLY
 #include "fmt/core.h"
 
-#include "quill/Backend.h"
-#include "quill/Frontend.h"
-#include "quill/LogMacros.h"
-#include "quill/Logger.h"
-#include "quill/sinks/ConsoleSink.h"
+//#include "quill/Backend.h"
+//#include "quill/Frontend.h"
+//#include "quill/LogMacros.h"
+//#include "quill/Logger.h"
+//#include "quill/sinks/ConsoleSink.h"
 #include <string_view>
 
 // 外部公開I/F
 
-extern quill::Logger* logger;
+//extern quill::Logger* logger;
 
 
 extern bool Initialize_STMGR();

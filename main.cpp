@@ -116,34 +116,34 @@ public:
 };
 
 
-PSG16* psg;
+PSG16* psg = nullptr;
 
 void wavecallbackfunc(void* buf, int samples, void *ptr)
 {
 	if (ptr != nullptr) {
 		XAUDIO2_BUFFER* p = (XAUDIO2_BUFFER*)ptr;
 		// LOG_INFO(logger, "wavecallback {0:d}samples. ptr={1:p} audiobytes={2:d} buffer={3:p} {4:d}", samples, buf, (int)p->AudioBytes, (void *)p->pAudioData, (int)p->PlayBegin);
-		LOG_INFO(logger, "wavecallback {0:d}samples. audiobytes={1:d}", samples, (int)p->AudioBytes);
+		//LOG_INFO(logger, "wavecallback {0:d}samples. audiobytes={1:d}", samples, (int)p->AudioBytes);
 	}
 	else {
-		LOG_INFO(logger, "wavecallback {0:d}samples.", samples);
+		//LOG_INFO(logger, "wavecallback {0:d}samples.", samples);
 	}
 	int16_t* pbuf = (int16_t*)buf;
 	psg->MakeWave(pbuf,samples);
 }
 
-quill::Logger* logger;
+//quill::Logger* logger = nullptr;
 
 
 int main()
 {
-	quill::Backend::start();
-	auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1");
-	logger = quill::Frontend::create_or_get_logger("root", std::move(console_sink));
+	//quill::Backend::start();
+	//auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1");
+	//logger = quill::Frontend::create_or_get_logger("root", std::move(console_sink));
 
 	// テスト
 	bool r = Initialize_STMGR();
-	LOG_INFO(logger, "return {}", r);
+	//LOG_INFO(logger, "return {}", r);
 
 	psg = new PSG16(48000);
 
@@ -156,14 +156,14 @@ int main()
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
 	std::function<void(void*, int, void *)> cbf = wavecallbackfunc;
 	int ch = MakeChannel_STMGR(w, w.nSamplesPerSec / 100, cbf);
-	LOG_INFO(logger, "ch {}", ch);
+	//LOG_INFO(logger, "ch {}", ch);
 	psg->SetFreq(440.0);
 	psg->SetVolume(0.7f, 0.3f);
 	psg->SetWaveType(8);
 	psg->SetKeyOn();
 
 	r = PlayChannel_STMGR(ch);
-	LOG_INFO(logger, "play = {}", r);
+	//LOG_INFO(logger, "play = {}", r);
 	Sleep(1000);
 	psg->SetFreq(440.0 + 20.0);
 	psg->SetVolume(0.3f, 0.7f);
