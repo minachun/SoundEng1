@@ -118,16 +118,9 @@ public:
 
 PSG16* psg = nullptr;
 
-void wavecallbackfunc(void* buf, int samples, void *ptr)
+void wavecallbackfunc(void* buf, int samples)
 {
-	if (ptr != nullptr) {
-		XAUDIO2_BUFFER* p = (XAUDIO2_BUFFER*)ptr;
-		// LOG_INFO(logger, "wavecallback {0:d}samples. ptr={1:p} audiobytes={2:d} buffer={3:p} {4:d}", samples, buf, (int)p->AudioBytes, (void *)p->pAudioData, (int)p->PlayBegin);
-		//LOG_INFO(logger, "wavecallback {0:d}samples. audiobytes={1:d}", samples, (int)p->AudioBytes);
-	}
-	else {
-		//LOG_INFO(logger, "wavecallback {0:d}samples.", samples);
-	}
+	//LOG_INFO(logger, "wavecallback {0:d}samples.", samples);
 	int16_t* pbuf = (int16_t*)buf;
 	psg->MakeWave(pbuf,samples);
 }
@@ -154,7 +147,7 @@ int main()
 	w.wBitsPerSample = 16;
 	w.nBlockAlign = w.wBitsPerSample * w.nChannels / 8;
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
-	std::function<void(void*, int, void *)> cbf = wavecallbackfunc;
+	std::function<void(void*, int)> cbf = wavecallbackfunc;
 	int ch = MakeChannel_STMGR(w, w.nSamplesPerSec / 100, cbf);
 	//LOG_INFO(logger, "ch {}", ch);
 	psg->SetFreq(440.0);

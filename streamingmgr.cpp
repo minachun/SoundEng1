@@ -53,20 +53,23 @@ public:
 	int prepare_index;
 	int submit_index;
 
-	std::function<void(void*, int, void*)> wavecallback;		// 波形要求コールバック関数
+	std::function<void(void*, int)> wavecallback;		// 波形要求コールバック関数
 	int callbacksamples;
 	int bufsize;
 	XAUDIO2_BUFFER xbuffer[2];
 	int next_buffer;
 	std::shared_ptr<BYTE> bufbody[2];
+	std::atomic<bool> stopflag;
 
 	engcallback* eng;
 	voicecallback* vbk;
 
-	StreamManager() : xaudio(nullptr), mvoice(nullptr), sourceV(nullptr)
+	StreamManager() : xaudio(nullptr), mvoice(nullptr), sourceV(nullptr), stopflag(false), eng(new engcallback()), bufsize(0), callbacksamples(0), next_buffer(0), prepare_index(0)
 	{
-		this->eng = new engcallback();
 		this->vbk = new voicecallback(this);
+		this->submit_index = 0;
+		this->xbuffer[0] = {};
+		this->xbuffer[1] = {};
 	}
 
 
@@ -77,12 +80,13 @@ public:
 		//LOG_INFO(logger, "PrepareBuffer {0:d}", this->prepare_index);
 		XAUDIO2_BUFFER* _b = &this->xbuffer[this->prepare_index];
 		// コールバック呼び出し
-		this->wavecallback((void*)_b->pAudioData, samples / this->bufsize, nullptr);
+		this->wavecallback((void*)_b->pAudioData, samples / this->bufsize);
 		this->prepare_index = 1 - this->prepare_index;
 	}
 
 	void SubmitBuffer()
 	{
+		if (this->stopflag) return;
 		//LOG_INFO(logger, "SubmitBuffer {0:d}", this->submit_index);
 		XAUDIO2_BUFFER* _b = &this->xbuffer[this->submit_index];
 		// バッファをsubmitする
@@ -129,7 +133,7 @@ public:
 	}
 
 	// チャンネル確保処理
-	bool MakeChannel(const WAVEFORMATEX& format, int bufsamples, std::function<void(void*, int, void*)> callback)
+	bool MakeChannel(const WAVEFORMATEX& format, int bufsamples, std::function<void(void*, int)> callback)
 	{
 		HRESULT hr;
 		// mgr_handle->voices.push_back(VoiceManager(callback, bufsamples, format.nBlockAlign));
@@ -173,6 +177,8 @@ public:
 	{
 		HRESULT hr;
 
+		this->stopflag = false;
+
 		// 再生開始前に、まずバッファ一つ目の準備
 		this->PrepareBuffer(this->callbacksamples * this->bufsize);
 
@@ -200,6 +206,7 @@ public:
 	{
 		HRESULT hr;
 
+		this->stopflag = true;
 		hr = this->sourceV->Stop(0, 0);
 		if (FAILED(hr)) {
 			// 停止に失敗
@@ -221,13 +228,19 @@ public:
 	{
 		// XAudio2を解放（すると関連してすべてのオブジェクトも解放される模様）
 		if (this->xaudio != nullptr) {
-			this->StopChannel();
-			this->xaudio->Release();
+			// this->StopChannel();
+			this->sourceV->DestroyVoice();
+			this->mvoice->DestroyVoice();
+			//this->xaudio->Release();
 			this->xaudio = nullptr;
 			this->mvoice = nullptr;
 		}
+		this->bufbody[0].reset();
+		this->bufbody[1].reset();
 		// COMの解放
 		::CoUninitialize();
+		delete this->eng;
+		delete this->vbk;
 		return true;
 	}
 
@@ -364,7 +377,7 @@ void Release_STMGR()
 // 引数：format : 出力したい波形情報
 //       buffersamples : １回のリクエストに必要なバッファサイズ（サンプル数）
 // 戻値 : int <0 でエラー、>=0で作成されたチャンネルのindex
-int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void(void*, int, void *)> callbackf)
+int MakeChannel_STMGR(WAVEFORMATEX format, int buffersamples, std::function<void(void*, int)> callbackf)
 {
 	// 初期化していないなのでnullを返す
 	if (mgr_handle == nullptr )
