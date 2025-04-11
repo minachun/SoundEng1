@@ -125,18 +125,21 @@ void wavecallbackfunc(void* buf, int samples)
 	psg->MakeWave(pbuf,samples);
 }
 
-//quill::Logger* logger = nullptr;
+// 440 * 2^((x-o4a)/12)
+
+
+quill::Logger* logger = nullptr;
 
 
 int main()
 {
-	//quill::Backend::start();
-	//auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1");
-	//logger = quill::Frontend::create_or_get_logger("root", std::move(console_sink));
+	quill::Backend::start();
+	auto console_sink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink_id_1");
+	logger = quill::Frontend::create_or_get_logger("root", std::move(console_sink));
 
 	// テスト
 	bool r = Initialize_STMGR();
-	//LOG_INFO(logger, "return {}", r);
+	LOG_INFO(logger, "return {}", r);
 
 	psg = new PSG16(48000);
 
@@ -149,42 +152,51 @@ int main()
 	w.nAvgBytesPerSec = w.nSamplesPerSec * w.nBlockAlign;
 	std::function<void(void*, int)> cbf = wavecallbackfunc;
 	int ch = MakeChannel_STMGR(w, w.nSamplesPerSec / 100, cbf);
-	//LOG_INFO(logger, "ch {}", ch);
-	psg->SetFreq(440.0);
+	LOG_INFO(logger, "ch {}", ch);
+	psg->SetFreq(440.0 * std::pow(2.0f, (0.0-9.0) / 12));
 	psg->SetVolume(0.7f, 0.3f);
 	psg->SetWaveType(8);
 	psg->SetKeyOn();
 
 	r = PlayChannel_STMGR(ch);
-	//LOG_INFO(logger, "play = {}", r);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 20.0);
-	psg->SetVolume(0.3f, 0.7f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 40.0);
+	LOG_INFO(logger, "play = {}", r);
+	Sleep(500);
+	//psg->SetFreq(440.0 * std::pow(2.0f, 1.0 / 12));
+	//psg->SetVolume(0.3f, 0.7f);
+	//Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (2.0 - 9.0) / 12));
 	psg->SetVolume(0.7f, 0.3f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 60.0);
-	psg->SetVolume(0.3f, 0.7f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 80.0);
+	Sleep(500);
+	//psg->SetFreq(440.0 * std::pow(2.0f, 3.0 / 12));
+	//psg->SetVolume(0.3f, 0.7f);
+	//Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (4.0 - 9.0) / 12));
 	psg->SetVolume(0.7f, 0.3f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 100.0);
+	Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (5.0 - 9.0) / 12));
 	psg->SetVolume(0.3f, 0.7f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 120.0);
-	psg->SetVolume(0.7f, 0.3f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 140.0);
+	Sleep(500);
+	//psg->SetFreq(440.0 * std::pow(2.0f, 6.0 / 12));
+	//psg->SetVolume(0.7f, 0.3f);
+	//Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (7.0 - 9.0) / 12));
 	psg->SetVolume(0.3f, 0.7f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 160.0);
-	psg->SetVolume(0.7f, 0.3f);
-	Sleep(1000);
-	psg->SetFreq(440.0 + 180.0);
+	Sleep(500);
+	//psg->SetFreq(440.0 * std::pow(2.0f, 8.0 / 12));
+	//psg->SetVolume(0.7f, 0.3f);
+	//Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (9.0 - 9.0) / 12));
 	psg->SetVolume(0.3f, 0.7f);
-	Sleep(1000);
+	Sleep(500);
+	//psg->SetFreq(440.0 * std::pow(2.0f, 10.0 / 12));
+	//psg->SetVolume(0.7f, 0.3f);
+	//Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (11.0 - 9.0) / 12));
+	psg->SetVolume(0.3f, 0.7f);
+	Sleep(500);
+	psg->SetFreq(440.0 * std::pow(2.0f, (12.0 - 9.0) / 12));
+	psg->SetVolume(0.3f, 0.7f);
+	Sleep(500);
 	StopChannel_STMGR(ch);
 
 	Release_STMGR();

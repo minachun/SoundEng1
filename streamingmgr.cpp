@@ -77,10 +77,15 @@ public:
 
 	void PrepareBuffer(UINT32 samples)
 	{
-		//LOG_INFO(logger, "PrepareBuffer {0:d}", this->prepare_index);
+		LOG_INFO(logger, "PrepareBuffer {0:d}-{1:d}bytes.", this->prepare_index, samples);
 		XAUDIO2_BUFFER* _b = &this->xbuffer[this->prepare_index];
 		// コールバック呼び出し
+		if (_b->pAudioData != NULL) {
+			delete[] _b->pAudioData;
+		}
+		_b->pAudioData = new BYTE[samples];
 		this->wavecallback((void*)_b->pAudioData, samples / this->bufsize);
+		_b->AudioBytes = samples;
 		this->prepare_index = 1 - this->prepare_index;
 	}
 
@@ -151,13 +156,13 @@ public:
 		this->bufsize = format.nBlockAlign;
 		int bsize = this->callbacksamples * this->bufsize;
 		//LOG_INFO(logger, "Makebuffer {0:d}bytes.", bsize);
-		this->bufbody[0] = std::make_shared<BYTE>(bsize);
+		//this->bufbody[0] = std::make_shared<BYTE>(0x4000);
 		//LOG_INFO(logger, "Makebuffer {0:d}bytes.", bsize);
-		this->bufbody[1] = std::make_shared<BYTE>(bsize);
+		//this->bufbody[1] = std::make_shared<BYTE>(0x4000);
 		for (int _i = 0; _i < 2; _i++) {
 			xbuffer[_i].Flags = 0;
 			xbuffer[_i].AudioBytes = bsize;
-			xbuffer[_i].pAudioData = this->bufbody[_i].get();
+			xbuffer[_i].pAudioData = NULL;
 			xbuffer[_i].PlayBegin = 0;
 			xbuffer[_i].PlayLength = 0;
 			xbuffer[_i].LoopBegin = 0;
@@ -235,8 +240,8 @@ public:
 			this->xaudio = nullptr;
 			this->mvoice = nullptr;
 		}
-		this->bufbody[0].reset();
-		this->bufbody[1].reset();
+		//this->bufbody[0].reset();
+		//this->bufbody[1].reset();
 		// COMの解放
 		::CoUninitialize();
 		delete this->eng;
